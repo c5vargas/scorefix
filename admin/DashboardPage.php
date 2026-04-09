@@ -80,10 +80,18 @@ class DashboardPage {
 		if ( null !== $scorefix_fixes_q && false !== $scorefix_fixes_q ) {
 			$notice = 'on' === sanitize_key( wp_unslash( $scorefix_fixes_q ) ) ? 'fixes_on' : 'fixes_off';
 		}
+		$scorefix_reminders_q = filter_input( INPUT_GET, 'scorefix_reminders', FILTER_UNSAFE_RAW );
+		if ( null !== $scorefix_reminders_q && false !== $scorefix_reminders_q && 'saved' === sanitize_key( wp_unslash( $scorefix_reminders_q ) ) ) {
+			$notice = 'reminders_saved';
+		}
 
 		$perf_err  = isset( $metrics['active_errors']['value'] ) && null !== $metrics['active_errors']['value'] ? (int) $metrics['active_errors']['value'] : 0;
 		$perf_warn = isset( $metrics['warnings']['value'] ) && null !== $metrics['warnings']['value'] ? (int) $metrics['warnings']['value'] : 0;
 		$perf_copy = self::performance_card_copy( $score, count( $issues ), $perf_err, $perf_warn );
+
+		if ( ! is_array( $settings ) ) {
+			$settings = array();
+		}
 
 		include SCOREFIX_PLUGIN_DIR . 'admin/views/dashboard.php';
 	}

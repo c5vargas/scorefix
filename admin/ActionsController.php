@@ -16,9 +16,10 @@ defined( 'ABSPATH' ) || exit;
  */
 class ActionsController {
 
-	const ACTION_RUN_SCAN  = 'scorefix_run_scan';
-	const ACTION_APPLY     = 'scorefix_apply_fixes';
-	const ACTION_DISABLE   = 'scorefix_disable_fixes';
+	const ACTION_RUN_SCAN       = 'scorefix_run_scan';
+	const ACTION_APPLY          = 'scorefix_apply_fixes';
+	const ACTION_DISABLE        = 'scorefix_disable_fixes';
+	const ACTION_SAVE_REMINDERS = 'scorefix_save_reminders';
 
 	/**
 	 * Handle admin actions.
@@ -40,6 +41,7 @@ class ActionsController {
 			check_admin_referer( self::ACTION_RUN_SCAN );
 			$scanner = new Scanner();
 			$scanner->run();
+			ReminderScheduler::clear_pending();
 			$this->redirect_with_arg( 'scorefix_scan', 'done' );
 		}
 
@@ -65,6 +67,22 @@ class ActionsController {
 			update_option( 'scorefix_settings', $settings, false );
 			$this->redirect_with_arg( 'scorefix_fixes', 'off' );
 		}
+
+		if ( self::ACTION_SAVE_REMINDERS === $action ) {
+			check_admin_referer( self::ACTION_SAVE_REMINDERS );
+			$settings = get_option( 'scorefix_settings', array() );
+			if ( ! is_array( $settings ) ) {
+				$settings = array();
+			}
+			$settings['reminders_enabled']  = isset( $_POST['scorefix_reminders_enabled'] );
+			$freq_raw                       = isset( $_POST['scorefix_reminder_frequency'] ) ? sanitize_key( wp_unslash( $_POST['scorefix_reminder_frequency'] ) ) : '3months';
+			$settings['reminder_frequency'] = ( '6months' === $freq_raw ) ? '6months' : '3months';
+			$settings['reminder_email']     = isset( $_POST['scorefix_reminder_email'] );
+			$settings['version']            = SCOREFIX_VERSION;
+			update_option( 'scorefix_settings', $settings, false );
+			ReminderScheduler::reschedule_from_settings();
+			$this->redirect_with_arg( 'scorefix_reminders', 'saved' );
+		}
 	}
 
 	/**
@@ -80,7 +98,7 @@ class ActionsController {
 				'page' => 'scorefix',
 				$key   => $value,
 			),
-			admin_url( 'admin.php' )
+			admin_url( 'options-general.php' )
 		);
 		wp_safe_redirect( $url );
 		exit;

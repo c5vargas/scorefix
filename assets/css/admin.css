@@ -120,6 +120,53 @@
 	top: 1px;
 }
 
+/* Cron reminder — only on ScoreFix screen (below plugin header; avoids admin_notices slot) */
+.scorefix-reminder-banner {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px 20px;
+	margin: 0;
+	padding: 16px 20px;
+	background: #eff6ff;
+	border: 1px solid #bfdbfe;
+	border-left: 4px solid var(--scorefix-primary);
+	border-radius: var(--scorefix-radius);
+	box-shadow: var(--scorefix-shadow-card);
+}
+
+.scorefix-reminder-banner__text {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	min-width: min(100%, 280px);
+	flex: 1;
+}
+
+.scorefix-reminder-banner__label {
+	display: block;
+	font-size: 13px;
+	font-weight: 800;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--scorefix-primary);
+}
+
+.scorefix-reminder-banner__msg {
+	font-size: 14px;
+	line-height: 1.5;
+	color: #1e3a5f;
+}
+
+.scorefix-reminder-banner__actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px 12px;
+	flex-shrink: 0;
+}
+
 /* Inline alerts (keep WP .notice + dismissible behaviour) */
 .scorefix-dashboard .notice.scorefix-notice {
 	display: flex;
@@ -207,14 +254,25 @@
 	margin: 20px 0;
 }
 
-.scorefix-grid--hero {
-	grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
-	align-items: stretch;
-	gap: 20px;
+/* Main dashboard: wide content column + action sidebar */
+.scorefix-dashboard-layout {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(280px, 380px);
+	gap: 24px;
+	margin: 20px 0;
+	align-items: start;
+}
+
+.scorefix-dashboard-main,
+.scorefix-dashboard-aside {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	min-width: 0;
 }
 
 @media screen and (max-width: 960px) {
-	.scorefix-grid--hero {
+	.scorefix-dashboard-layout {
 		grid-template-columns: 1fr;
 	}
 }
@@ -662,6 +720,101 @@
 
 .scorefix-card--limits {
 	margin-top: 16px;
+}
+
+/* Scan reminders — same shell as Automation (scorefix-card--automation) */
+.scorefix-card--reminders {
+	margin-top: 0;
+}
+
+.scorefix-reminders__title {
+	margin-bottom: 8px;
+}
+
+.scorefix-reminders__lead {
+	margin: 0 0 18px;
+	font-size: 13px;
+	line-height: 1.5;
+	max-width: none;
+}
+
+.scorefix-reminders-form {
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.scorefix-reminders__panel {
+	align-items: flex-start;
+	margin: 0;
+}
+
+.scorefix-reminders__panel .scorefix-automation__panel-text {
+	padding-top: 2px;
+}
+
+.scorefix-reminders__control {
+	flex-shrink: 0;
+	margin: 0;
+	padding-top: 2px;
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+}
+
+.scorefix-reminders__checkbox {
+	width: 18px;
+	height: 18px;
+	margin: 0;
+	border-radius: 4px;
+	accent-color: var(--scorefix-primary);
+	cursor: pointer;
+}
+
+.scorefix-reminders__select {
+	margin: 0;
+	min-width: 9.5rem;
+	max-width: 100%;
+	padding: 6px 28px 6px 10px;
+	font-size: 13px;
+	line-height: 1.4;
+	border: 1px solid #e2e8f0;
+	border-radius: 8px;
+	background-color: #fff;
+	color: var(--scorefix-slate-900);
+	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+	cursor: pointer;
+}
+
+.scorefix-reminders__select:focus {
+	border-color: var(--scorefix-primary);
+	outline: 1px solid transparent;
+	box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+
+.scorefix-reminders__footer-note {
+	margin-top: 12px;
+	margin-bottom: 0;
+}
+
+.scorefix-reminders__submit {
+	margin-top: 4px;
+}
+
+.scorefix-reminders__save.button.button-primary {
+	display: flex;
+	width: 100%;
+	align-items: center;
+	justify-content: center;
+	min-height: 42px;
+	padding: 8px 16px !important;
+	border-radius: 10px !important;
+	font-size: 14px !important;
+	font-weight: 600 !important;
+	line-height: 1.4 !important;
+	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08), 0 2px 8px rgba(37, 99, 235, 0.22);
 }
 
 /* Metric cards (errors / warnings / resolved) — stack layout only when not --row */

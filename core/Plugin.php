@@ -9,6 +9,7 @@ namespace ScoreFix\Core;
 
 use ScoreFix\Admin\ActionsController;
 use ScoreFix\Admin\DashboardPage;
+use ScoreFix\Admin\ReminderScheduler;
 use ScoreFix\Fixes\FixEngine;
 use ScoreFix\Frontend\RenderHooks;
 
@@ -33,11 +34,28 @@ class Plugin {
 	 */
 	public static function activate() {
 		$defaults = array(
-			'fixes_enabled' => false,
-			'version'       => SCOREFIX_VERSION,
+			'fixes_enabled'      => false,
+			'version'            => SCOREFIX_VERSION,
+			'reminders_enabled'  => false,
+			'reminder_frequency' => '3months',
+			'reminder_email'     => false,
 		);
 		if ( false === get_option( 'scorefix_settings' ) ) {
 			add_option( 'scorefix_settings', $defaults );
+		} else {
+			$settings = get_option( 'scorefix_settings', array() );
+			if ( is_array( $settings ) ) {
+				$changed = false;
+				foreach ( $defaults as $key => $value ) {
+					if ( ! array_key_exists( $key, $settings ) ) {
+						$settings[ $key ] = $value;
+						$changed          = true;
+					}
+				}
+				if ( $changed ) {
+					update_option( 'scorefix_settings', $settings, false );
+				}
+			}
 		}
 	}
 
@@ -51,6 +69,9 @@ class Plugin {
 
 		$dashboard = new DashboardPage();
 		$actions   = new ActionsController();
+		$reminders = new ReminderScheduler();
+		$reminders->register( self::$loader );
+		self::$loader->add_action( 'plugins_loaded', $reminders, 'ensure_cron_on_load', 30, 0 );
 
 		self::$loader->add_action( 'admin_menu', $dashboard, 'register_menu', 10, 0 );
 		self::$loader->add_action( 'admin_enqueue_scripts', $dashboard, 'enqueue_assets', 10, 1 );
