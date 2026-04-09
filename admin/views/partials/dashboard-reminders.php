@@ -4,20 +4,20 @@
  *
  * @package ScoreFix
  *
- * @var array<string, mixed> $settings Plugin settings array.
+ * @var array<string, mixed> $scorefix_settings Plugin settings array.
  */
 
 defined( 'ABSPATH' ) || exit;
 
 use ScoreFix\Admin\ActionsController;
 
-if ( ! is_array( $settings ) ) {
-	$settings = array();
+if ( ! is_array( $scorefix_settings ) ) {
+	$scorefix_settings = array();
 }
 
-$scorefix_reminders_on      = ! empty( $settings['reminders_enabled'] );
-$scorefix_reminder_freq     = ( isset( $settings['reminder_frequency'] ) && '6months' === $settings['reminder_frequency'] ) ? '6months' : '3months';
-$scorefix_reminder_email_on = ! empty( $settings['reminder_email'] );
+$scorefix_reminders_on      = ! empty( $scorefix_settings['reminders_enabled'] );
+$scorefix_reminder_freq     = ( isset( $scorefix_settings['reminder_frequency'] ) && '6months' === $scorefix_settings['reminder_frequency'] ) ? '6months' : '3months';
+$scorefix_reminder_email_on = ! empty( $scorefix_settings['reminder_email'] );
 ?>
 <div class="scorefix-card scorefix-card--automation scorefix-card--reminders">
 	<p class="scorefix-automation__title scorefix-reminders__title" role="heading" aria-level="2"><?php esc_html_e( 'Scan reminders', 'scorefix' ); ?></p>

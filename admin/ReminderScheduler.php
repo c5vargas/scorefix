@@ -71,21 +71,74 @@ class ReminderScheduler {
 			return;
 		}
 
-		$to      = get_option( 'admin_email' );
+		$to = get_option( 'admin_email' );
+		if ( ! is_email( $to ) ) {
+			return;
+		}
+
 		$subject = __( 'ScoreFix: time for a quick site check', 'scorefix' );
 		$url     = admin_url( 'options-general.php?page=scorefix' );
-		$body    = sprintf(
-			/* translators: 1: site name, 2: URL to ScoreFix settings */
-			__(
-				"Hi,\n\nIt's been a while since you ran a ScoreFix scan on %1\$s. Open your dashboard and tap “Run scan” — it only takes a moment.\n\n%2\$s\n\nIf you've already scanned recently, you can ignore this message.\n\n— ScoreFix",
-				'scorefix'
-			),
-			wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES ),
-			$url
-		);
-		$headers = array( 'Content-Type: text/plain; charset=UTF-8' );
+		$site    = wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES );
+
+		$body = self::build_reminder_email_html( $site, $url );
+
+		$headers = array( 'Content-Type: text/html; charset=UTF-8' );
 
 		wp_mail( $to, $subject, $body, $headers );
+	}
+
+	/**
+	 * Simple HTML email: tables + inline styles (broad client support). Palette aligned with wp-admin basics.
+	 *
+	 * @param string $site_name Site title (decoded).
+	 * @param string $settings_url ScoreFix screen URL.
+	 * @return string
+	 */
+	private static function build_reminder_email_html( $site_name, $settings_url ) {
+		$site_esc = esc_html( $site_name );
+		$url_esc  = esc_url( $settings_url );
+		$home_esc = esc_url( home_url( '/' ) );
+
+		$greeting = esc_html__( 'Hi,', 'scorefix' );
+		$lead     = sprintf(
+			/* translators: %s: site title */
+			esc_html__( 'It has been a while since you ran a ScoreFix scan on %s. Open your dashboard and tap “Run scan” — it only takes a moment.', 'scorefix' ),
+			$site_esc
+		);
+		$cta      = esc_html__( 'Open ScoreFix & run scan', 'scorefix' );
+		$footnote = esc_html__( 'If you have already scanned recently, you can ignore this message.', 'scorefix' );
+		$signoff  = esc_html__( '— ScoreFix', 'scorefix' );
+		$site_url_label = esc_html__( 'Site', 'scorefix' );
+
+		$font = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
+		// WordPress admin–style primary (widely recognized, no external assets).
+		$btn_bg = '#2271b1';
+		$text   = '#1d2327';
+		$muted     = '#646970';
+		$wrap_bg   = '#f0f0f1';
+		$card_bg   = '#ffffff';
+		$border    = '#dcdcde';
+
+		return '<!DOCTYPE html><html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /></head>'
+			. '<body style="margin:0;padding:0;background:' . esc_attr( $wrap_bg ) . ';">'
+			. '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:' . esc_attr( $wrap_bg ) . ';padding:24px 12px;">'
+			. '<tr><td align="center">'
+			. '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:' . esc_attr( $card_bg ) . ';border:1px solid ' . esc_attr( $border ) . ';border-radius:4px;">'
+			. '<tr><td style="padding:28px 28px 8px;font-family:' . esc_attr( $font ) . ';">'
+			. '<p style="margin:0 0 14px;font-size:15px;line-height:1.55;color:' . esc_attr( $text ) . ';">' . $greeting . '</p>'
+			. '<p style="margin:0 0 22px;font-size:15px;line-height:1.55;color:' . esc_attr( $text ) . ';">' . $lead . '</p>'
+			. '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 22px;">'
+			. '<tr><td style="border-radius:4px;background:' . esc_attr( $btn_bg ) . ';">'
+			. '<a href="' . $url_esc . '" style="display:inline-block;padding:12px 22px;font-family:' . esc_attr( $font ) . ';font-size:14px;font-weight:600;line-height:1.4;color:#ffffff;text-decoration:none;">' . $cta . '</a>'
+			. '</td></tr></table>'
+			. '<p style="margin:0 0 20px;font-size:13px;line-height:1.5;color:' . esc_attr( $muted ) . ';">' . $footnote . '</p>'
+			. '<p style="margin:0;font-size:13px;line-height:1.5;color:' . esc_attr( $muted ) . ';">' . $signoff . '</p>'
+			. '</td></tr>'
+			. '<tr><td style="padding:16px 28px 22px;border-top:1px solid ' . esc_attr( $border ) . ';font-family:' . esc_attr( $font ) . ';font-size:12px;line-height:1.45;color:' . esc_attr( $muted ) . ';">'
+			. esc_html( $site_url_label ) . ': <a href="' . $home_esc . '" style="color:' . esc_attr( $btn_bg ) . ';text-decoration:underline;word-break:break-all;">' . $home_esc . '</a>'
+			. '</td></tr></table>'
+			. '</td></tr></table>'
+			. '</body></html>';
 	}
 
 	/**

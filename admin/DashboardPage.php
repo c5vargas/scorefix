@@ -65,8 +65,8 @@ class DashboardPage {
 		$issues  = is_array( $scan ) && isset( $scan['issues'] ) && is_array( $scan['issues'] ) ? $scan['issues'] : array();
 		$scanned = is_array( $scan ) && isset( $scan['scanned_at'] ) ? $scan['scanned_at'] : '';
 
-		$settings = get_option( 'scorefix_settings', array() );
-		$fixes_on = is_array( $settings ) && ! empty( $settings['fixes_enabled'] );
+		$scorefix_settings = get_option( 'scorefix_settings', array() );
+		$fixes_on          = is_array( $scorefix_settings ) && ! empty( $scorefix_settings['fixes_enabled'] );
 
 		$metrics                = DashboardMetrics::for_dashboard( $scan );
 		$show_metric_trend_hint = DashboardMetrics::should_show_next_scan_hint( $scan );
@@ -89,8 +89,8 @@ class DashboardPage {
 		$perf_warn = isset( $metrics['warnings']['value'] ) && null !== $metrics['warnings']['value'] ? (int) $metrics['warnings']['value'] : 0;
 		$perf_copy = self::performance_card_copy( $score, count( $issues ), $perf_err, $perf_warn );
 
-		if ( ! is_array( $settings ) ) {
-			$settings = array();
+		if ( ! is_array( $scorefix_settings ) ) {
+			$scorefix_settings = array();
 		}
 
 		include SCOREFIX_PLUGIN_DIR . 'admin/views/dashboard.php';
