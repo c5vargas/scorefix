@@ -47,8 +47,6 @@ class Plugin {
 	 * @return void
 	 */
 	public static function init() {
-		load_plugin_textdomain( 'scorefix', false, dirname( SCOREFIX_PLUGIN_BASENAME ) . '/languages' );
-
 		self::$loader = new Loader();
 
 		$dashboard = new DashboardPage();

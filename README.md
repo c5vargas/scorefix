@@ -19,8 +19,8 @@ Then open **Settings → ScoreFix**.
 | `frontend/` | `RenderHooks` — `the_content`, attachments |
 | `admin/` | Dashboard + POST actions |
 | `docs/SAAS.md` | SaaS roadmap & API sketch |
-| `COPY.md` | Marketing copy |
 | `readme.txt` | WordPress.org-style readme |
+| `languages/` | Translation files (WordPress.org loads from here) |
 
 ## Requirements
 
@@ -30,3 +30,21 @@ Then open **Settings → ScoreFix**.
 ## License
 
 GPL v2 or later.
+
+## Marketing copy (listing & UI)
+
+Use consistently on WordPress.org, landing pages, and in-product microcopy.
+
+**Plugin name:** ScoreFix – Boost Lighthouse & Improve UX
+
+**Short description (≤150 chars):** Fix the issues hurting your Lighthouse score and conversions in one click. No coding required.
+
+**Long description (summary):** Lighthouse Accessibility reflects real usability. ScoreFix finds issues that hurt Lighthouse and outcomes (missing ALT, unnamed links/buttons, unlabeled fields). Scan → **ScoreFix Score (0–100)** → plain-language list tied to readability, trust, and conversions. **Apply Fixes** changes real HTML output, not overlays. For owners, WooCommerce, and agencies without code.
+
+**Differentiation:** Real fixes not overlays; Lighthouse + UX + conversions; scan → prioritize → fix.
+
+**Honest limitations:** No legal WCAG guarantee or perfect Lighthouse; editorial ALT may need humans; some JS-heavy UIs need work outside the plugin.
+
+## WordPress.org package
+
+Do not ship hidden dotfiles (e.g. `.distignore`, `.gitkeep`) in the plugin ZIP; Plugin Check rejects them. Omit development-only markdown from the root if the checker flags it (`README.md` is often kept for GitHub only—use `readme.txt` for the directory).

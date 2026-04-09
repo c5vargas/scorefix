@@ -1,8 +1,8 @@
 === ScoreFix – Boost Lighthouse & Improve UX ===
 Contributors: scorefix
-Tags: lighthouse, accessibility, performance, UX, SEO, WooCommerce
+Tags: lighthouse, accessibility, performance, SEO, WooCommerce
 Requires at least: 6.0
-Tested up to: 6.7
+Tested up to: 6.9
 Requires PHP: 7.4
 Stable tag: 1.0.0
 License: GPLv2 or later

@@ -72,11 +72,13 @@ class DashboardPage {
 		$show_metric_trend_hint = DashboardMetrics::should_show_next_scan_hint( $scan );
 
 		$notice = '';
-		if ( isset( $_GET['scorefix_scan'] ) && 'done' === $_GET['scorefix_scan'] ) {
+		$scorefix_scan_q = filter_input( INPUT_GET, 'scorefix_scan', FILTER_UNSAFE_RAW );
+		if ( null !== $scorefix_scan_q && false !== $scorefix_scan_q && 'done' === sanitize_key( wp_unslash( $scorefix_scan_q ) ) ) {
 			$notice = 'scan_done';
 		}
-		if ( isset( $_GET['scorefix_fixes'] ) ) {
-			$notice = 'on' === $_GET['scorefix_fixes'] ? 'fixes_on' : 'fixes_off';
+		$scorefix_fixes_q = filter_input( INPUT_GET, 'scorefix_fixes', FILTER_UNSAFE_RAW );
+		if ( null !== $scorefix_fixes_q && false !== $scorefix_fixes_q ) {
+			$notice = 'on' === sanitize_key( wp_unslash( $scorefix_fixes_q ) ) ? 'fixes_on' : 'fixes_off';
 		}
 
 		$perf_err  = isset( $metrics['active_errors']['value'] ) && null !== $metrics['active_errors']['value'] ? (int) $metrics['active_errors']['value'] : 0;

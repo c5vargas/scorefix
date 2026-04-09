@@ -14,7 +14,6 @@ use ScoreFix\Admin\ActionsController;
 
 ?>
 <div class="wrap scorefix-dashboard">
-	<h1></h1>
 
 	<?php if ( 'scan_done' === $notice || 'fixes_on' === $notice || 'fixes_off' === $notice ) : ?>
 		<div class="scorefix-notices">
@@ -44,7 +43,7 @@ use ScoreFix\Admin\ActionsController;
 	<?php endif; ?>
 
 	<header class="scorefix-page-header">
-		<p class="scorefix-page-title"><?php echo esc_html( get_admin_page_title() ); ?></p>
+		<h1 class="scorefix-page-title"><?php echo esc_html( get_admin_page_title() ); ?></h1>
 		<p class="scorefix-lead">
 			<?php esc_html_e( 'Fix your Lighthouse score and improve your UX in minutes. No coding required.', 'scorefix' ); ?>
 		</p>
@@ -60,18 +59,18 @@ use ScoreFix\Admin\ActionsController;
 				</div>
 				<div class="scorefix-donut-wrap">
 					<?php
-					$donut_pct  = null !== $score ? max( 0, min( 100, (int) $score ) ) : 0;
-					$donut_tone = DashboardPage::donut_score_tone_slug( $score );
-					$donut_class = 'scorefix-donut';
+					$scorefix_donut_pct   = null !== $score ? max( 0, min( 100, (int) $score ) ) : 0;
+					$scorefix_donut_tone  = DashboardPage::donut_score_tone_slug( $score );
+					$scorefix_donut_class = 'scorefix-donut';
 					if ( null === $score ) {
-						$donut_class .= ' scorefix-donut--empty';
-					} elseif ( null !== $donut_tone ) {
-						$donut_class .= ' scorefix-donut--tone-' . $donut_tone;
+						$scorefix_donut_class .= ' scorefix-donut--empty';
+					} elseif ( null !== $scorefix_donut_tone ) {
+						$scorefix_donut_class .= ' scorefix-donut--tone-' . $scorefix_donut_tone;
 					}
 					?>
 					<div
-						class="<?php echo esc_attr( $donut_class ); ?>"
-						style="<?php echo null !== $score ? '--scorefix-donut-pct: ' . (int) $donut_pct . ';' : ''; ?>"
+						class="<?php echo esc_attr( $scorefix_donut_class ); ?>"
+						style="<?php echo null !== $score ? '--scorefix-donut-pct: ' . (int) $scorefix_donut_pct . ';' : ''; ?>"
 						role="img"
 						aria-label="<?php echo esc_attr( null !== $score ? sprintf( /* translators: %d: score */ __( 'Overall score %d out of 100', 'scorefix' ), (int) $score ) : __( 'No score yet', 'scorefix' ) ); ?>"
 					>
@@ -168,33 +167,33 @@ use ScoreFix\Admin\ActionsController;
 				</thead>
 				<tbody>
 					<?php
-					$shown = 0;
-					foreach ( $issues as $issue ) {
-						if ( ! is_array( $issue ) ) {
+					$scorefix_issues_shown = 0;
+					foreach ( $issues as $scorefix_issue ) {
+						if ( ! is_array( $scorefix_issue ) ) {
 							continue;
 						}
-						if ( $shown >= 50 ) {
+						if ( $scorefix_issues_shown >= 50 ) {
 							break;
 						}
-						++$shown;
-						list( $title, $desc ) = DashboardPage::describe_issue( $issue );
-						$ctx_parts            = array();
-						if ( ! empty( $issue['post_id'] ) ) {
-							$ctx_parts[] = sprintf(
+						++$scorefix_issues_shown;
+						list( $scorefix_issue_title, $scorefix_issue_desc ) = DashboardPage::describe_issue( $scorefix_issue );
+						$scorefix_ctx_parts = array();
+						if ( ! empty( $scorefix_issue['post_id'] ) ) {
+							$scorefix_ctx_parts[] = sprintf(
 								/* translators: %d: post or attachment ID */
 								__( 'ID %d', 'scorefix' ),
-								(int) $issue['post_id']
+								(int) $scorefix_issue['post_id']
 							);
 						}
-						if ( ! empty( $issue['context'] ) ) {
-							$ctx_parts[] = sanitize_text_field( (string) $issue['context'] );
+						if ( ! empty( $scorefix_issue['context'] ) ) {
+							$scorefix_ctx_parts[] = sanitize_text_field( (string) $scorefix_issue['context'] );
 						}
-						$ctx = implode( ' · ', $ctx_parts );
+						$scorefix_ctx = implode( ' · ', $scorefix_ctx_parts );
 						?>
 						<tr>
-							<td><?php echo esc_html( $title ); ?></td>
-							<td><?php echo esc_html( $desc ); ?></td>
-							<td><?php echo esc_html( $ctx ); ?></td>
+							<td><?php echo esc_html( $scorefix_issue_title ); ?></td>
+							<td><?php echo esc_html( $scorefix_issue_desc ); ?></td>
+							<td><?php echo esc_html( $scorefix_ctx ); ?></td>
 						</tr>
 					<?php } ?>
 				</tbody>
