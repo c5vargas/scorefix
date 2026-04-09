@@ -6,15 +6,11 @@
  *
  * @var bool   $fixes_on
  * @var string $scanned ISO datetime or empty.
- * @var array  $scorefix_settings Plugin settings.
  */
 
 defined( 'ABSPATH' ) || exit;
 
 use ScoreFix\Admin\ActionsController;
-
-$scorefix_settings    = isset( $scorefix_settings ) && is_array( $scorefix_settings ) ? $scorefix_settings : array();
-$meta_description_on  = ! array_key_exists( 'meta_description_enabled', $scorefix_settings ) || ! empty( $scorefix_settings['meta_description_enabled'] );
 
 ?>
 <div class="scorefix-card scorefix-card--automation">
@@ -53,30 +49,6 @@ $meta_description_on  = ! array_key_exists( 'meta_description_enabled', $scorefi
 				</form>
 			<?php endif; ?>
 		</div>
-	</div>
-	<div class="scorefix-automation__scope">
-		<p class="scorefix-automation__scope-title"><?php esc_html_e( 'When automatic fixes are on, the plugin can:', 'scorefix' ); ?></p>
-		<ul class="scorefix-automation__scope-list">
-			<li><?php esc_html_e( 'Fill missing image ALT text (from the media library or filename).', 'scorefix' ); ?></li>
-			<li><?php esc_html_e( 'Add accessible names to links and buttons that have none.', 'scorefix' ); ?></li>
-			<li><?php esc_html_e( 'Add aria-label to unlabeled text fields, checkboxes, radios, selects, and textareas (when there is no label, wrapping label, or aria naming).', 'scorefix' ); ?></li>
-		</ul>
-		<p class="scorefix-automation__scope-note scorefix-muted"><?php esc_html_e( 'It does not fix color contrast, server speed, cache headers, or third-party scripts. Lighthouse may still report those separately.', 'scorefix' ); ?></p>
-	</div>
-	<div class="scorefix-automation__panel scorefix-automation__panel--stacked">
-		<div class="scorefix-automation__panel-text">
-			<strong class="scorefix-automation__panel-label"><?php esc_html_e( 'Fallback meta description', 'scorefix' ); ?></strong>
-			<span class="scorefix-automation__panel-hint"><?php esc_html_e( 'Outputs a meta description on singular pages and the front page when none is set (Yoast / Rank Math custom descriptions are respected).', 'scorefix' ); ?></span>
-		</div>
-		<form method="post" class="scorefix-automation-form scorefix-meta-desc-form">
-			<?php wp_nonce_field( ActionsController::ACTION_SAVE_META_DESC ); ?>
-			<input type="hidden" name="scorefix_action" value="<?php echo esc_attr( ActionsController::ACTION_SAVE_META_DESC ); ?>" />
-			<label class="scorefix-meta-desc-toggle">
-				<input type="checkbox" name="scorefix_meta_description_enabled" value="1" <?php checked( $meta_description_on ); ?> />
-				<span><?php esc_html_e( 'Enable fallback meta description', 'scorefix' ); ?></span>
-			</label>
-			<button type="submit" class="button button-secondary"><?php esc_html_e( 'Save', 'scorefix' ); ?></button>
-		</form>
 	</div>
 	<div class="scorefix-automation__chart" aria-hidden="true">
 		<div class="scorefix-automation__chart-inner"></div>

@@ -32,6 +32,7 @@ defined( 'ABSPATH' ) || exit;
 		<div class="scorefix-dashboard-aside">
 			<?php include SCOREFIX_PLUGIN_DIR . 'admin/views/partials/dashboard-automation.php'; ?>
 			<?php include SCOREFIX_PLUGIN_DIR . 'admin/views/partials/dashboard-reminders.php'; ?>
+			<?php include SCOREFIX_PLUGIN_DIR . 'admin/views/partials/dashboard-seo.php'; ?>
 		</div>
 	</div>
 
