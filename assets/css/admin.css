@@ -752,6 +752,10 @@
 	margin-top: 12px;
 }
 
+.scorefix-table {
+	border: 0!important;
+}
+
 .scorefix-table td {
 	vertical-align: top;
 }
@@ -991,4 +995,402 @@
 .scorefix-metrics-hint {
 	margin: 10px 0 0;
 	max-width: 340px;
+}
+
+/* Issues table (dashboard) */
+.scorefix-card--issues .scorefix-issues-filters {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px 12px;
+	margin: 0 0 14px;
+}
+
+.scorefix-issues-filter {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 12px;
+	border-radius: 999px;
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 1.2;
+	text-decoration: none;
+	color: var(--scorefix-slate-900);
+	background: var(--scorefix-slate-100);
+	border: 1px solid transparent;
+	transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.scorefix-issues-filter:hover,
+.scorefix-issues-filter:focus {
+	color: var(--scorefix-slate-900);
+	background: #e2e8f0;
+	border-color: #cbd5e1;
+	outline: none;
+	box-shadow: 0 0 0 1px #cbd5e1;
+}
+
+.scorefix-issues-filter.is-active {
+	background: var(--scorefix-primary-soft);
+	border-color: rgba(37, 99, 235, 0.35);
+	color: var(--scorefix-primary);
+}
+
+.scorefix-issues-filter .dashicons {
+	width: 16px;
+	height: 16px;
+	font-size: 16px;
+	line-height: 1;
+	flex-shrink: 0;
+}
+
+.scorefix-issues-filter--error:not(.is-active) .dashicons {
+	color: var(--scorefix-error-icon-fg);
+}
+
+.scorefix-issues-filter--warning:not(.is-active) .dashicons {
+	color: var(--scorefix-warning-icon-fg);
+}
+
+.scorefix-issues-displaying {
+	margin: 0 0 10px;
+	font-size: 12px;
+}
+
+.scorefix-issues-empty-filter {
+	margin: 8px 0 0;
+}
+
+.scorefix-table-wrap--issues {
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+	margin: 4px 0 0;
+	border-radius: var(--scorefix-radius-lg);
+	border: 1px solid #e2e8f0;
+	background: #fff;
+	box-shadow: var(--scorefix-shadow-card);
+}
+
+.scorefix-table--issues {
+	min-width: 560px;
+	width: 100%;
+	table-layout: auto;
+	border: 0;
+	border-collapse: separate;
+	border-spacing: 0;
+	border-radius: var(--scorefix-radius-lg);
+	overflow: hidden;
+	box-shadow: none;
+}
+
+.scorefix-table--issues thead th {
+	padding: 14px 16px;
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
+	text-align: left;
+	color: var(--scorefix-slate-500);
+	background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+	border-bottom: 1px solid #e2e8f0;
+	border-top: 0;
+	line-height: 1.3;
+}
+
+.scorefix-table--issues thead th:not(:last-child) {
+	border-right: 1px solid rgba(226, 232, 240, 0.85);
+}
+
+.scorefix-table--issues tbody td {
+	vertical-align: top;
+	padding: 14px 16px;
+	font-size: 13px;
+	line-height: 1.5;
+	border-top: 1px solid #eef2f7;
+	background: #fff;
+}
+
+.scorefix-table--issues tbody tr.scorefix-issue-main td {
+	transition: background 0.15s ease;
+}
+
+.scorefix-table--issues tbody tr.scorefix-issue-main--alt td {
+	background: #fafbfc;
+}
+
+.scorefix-table--issues tbody tr.scorefix-issue-main:hover td {
+	background: #f1f5f9;
+}
+
+.scorefix-table--issues tbody tr.scorefix-issue-main--alt:hover td {
+	background: #eef2f7;
+}
+
+.scorefix-table--issues .column-issue {
+	min-width: 220px;
+	max-width: 380px;
+}
+
+.scorefix-table--issues .column-actions {
+	min-width: 9rem;
+	white-space: normal;
+}
+
+.scorefix-table--issues .column-why {
+	min-width: 220px;
+	max-width: 400px;
+}
+
+.scorefix-issue-heading {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-start;
+	gap: 10px 14px;
+}
+
+.scorefix-issue-heading .scorefix-issue-badge {
+	flex-shrink: 0;
+	margin-top: 2px;
+}
+
+.scorefix-issue-heading .scorefix-issue-title {
+	flex: 1 1 12rem;
+	min-width: 0;
+	margin: 0;
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 1.4;
+	color: var(--scorefix-slate-900);
+}
+
+.scorefix-dashboard .scorefix-table--issues.widefat > thead > tr > th,
+.scorefix-dashboard .scorefix-table--issues.widefat > tbody > tr > td {
+	border-left: 0;
+}
+
+/* Full-width expandable technical details (toggle lives in Actions column) */
+.scorefix-issue-actions__details {
+	position: relative;
+	list-style: none;
+}
+
+.scorefix-issue-detail-toggle {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	clip-path: inset(50%);
+	white-space: nowrap;
+	border: 0;
+}
+
+.scorefix-issue-detail-trigger.button.button-small {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	margin: 0;
+	cursor: pointer;
+	font-weight: 600;
+	user-select: none;
+	box-shadow: none;
+}
+
+.scorefix-issue-actions__details .scorefix-issue-detail-toggle:focus + .scorefix-issue-detail-trigger {
+	outline: 2px solid var(--scorefix-primary);
+	outline-offset: 2px;
+}
+
+.scorefix-issue-detail-trigger__hide {
+	display: none;
+}
+
+.scorefix-table--issues tr.scorefix-issue-main:has(.scorefix-issue-detail-toggle:checked) .scorefix-issue-detail-trigger__hide {
+	display: inline;
+}
+
+.scorefix-table--issues tr.scorefix-issue-main:has(.scorefix-issue-detail-toggle:checked) .scorefix-issue-detail-trigger__show {
+	display: none;
+}
+
+.scorefix-table--issues tr.scorefix-issue-main:has(.scorefix-issue-detail-toggle:checked) .scorefix-issue-detail-trigger.button {
+	background: var(--scorefix-primary-soft);
+	border-color: rgba(37, 99, 235, 0.35);
+	color: var(--scorefix-primary);
+	box-shadow: 0 1px 2px rgba(37, 99, 235, 0.08);
+}
+
+.scorefix-issue-detail-row {
+	display: none;
+}
+
+.scorefix-table--issues tr.scorefix-issue-main:has(.scorefix-issue-detail-toggle:checked) + tr.scorefix-issue-detail-row {
+	display: table-row;
+}
+
+.scorefix-issue-detail-panel {
+	padding: 0 !important;
+	vertical-align: top;
+	background: linear-gradient(180deg, #f1f5f9 0%, #f8fafc 55%, #fff 100%) !important;
+	border-top: 1px solid #e2e8f0 !important;
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.scorefix-issue-detail-row--alt .scorefix-issue-detail-panel {
+	background: linear-gradient(180deg, #e8edf3 0%, #f1f5f9 50%, #fafbfc 100%) !important;
+}
+
+.scorefix-issue-detail-panel__inner {
+	padding: 18px 22px 22px;
+	max-width: 100%;
+}
+
+.scorefix-issue-detail-panel__title {
+	margin: 0 0 14px;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--scorefix-slate-500);
+}
+
+.scorefix-issue-preview__dl--panel {
+	display: grid;
+	grid-template-columns: minmax(120px, 200px) 1fr;
+	gap: 4px 20px;
+	margin: 0;
+	padding: 0;
+	font-size: 13px;
+	align-items: start;
+}
+
+@media screen and (max-width: 782px) {
+	.scorefix-issue-preview__dl--panel {
+		grid-template-columns: 1fr;
+	}
+}
+
+.scorefix-issue-preview__dl--panel dt {
+	margin: 10px 0 0;
+	padding: 0;
+	font-weight: 600;
+	color: var(--scorefix-slate-500);
+}
+
+.scorefix-issue-preview__dl--panel dt:first-child {
+	margin-top: 0;
+}
+
+.scorefix-issue-preview__dl--panel dd {
+	margin: 0 0 8px;
+	grid-column: 2;
+}
+
+@media screen and (max-width: 782px) {
+	.scorefix-issue-preview__dl--panel dd {
+		grid-column: 1;
+		margin-bottom: 12px;
+	}
+}
+
+.scorefix-issue-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 10px;
+	border-radius: 999px;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	line-height: 1.2;
+}
+
+.scorefix-issue-badge .dashicons {
+	width: 14px;
+	height: 14px;
+	font-size: 14px;
+	line-height: 1;
+	flex-shrink: 0;
+}
+
+.scorefix-issue-badge--error {
+	background: var(--scorefix-error-icon-bg);
+	color: var(--scorefix-error-icon-fg);
+}
+
+.scorefix-issue-badge--warning {
+	background: var(--scorefix-warning-icon-bg);
+	color: var(--scorefix-warning-icon-fg);
+}
+
+.scorefix-issue-loc-title {
+	font-weight: 500;
+	color: #1d2327;
+}
+
+.scorefix-issue-loc-id,
+.scorefix-issue-loc-ctx {
+	font-size: 12px;
+}
+
+.scorefix-issue-code {
+	display: block;
+	padding: 10px 12px;
+	background: #fff;
+	border: 1px solid #e2e8f0;
+	border-radius: 10px;
+	font-size: 12px;
+	line-height: 1.45;
+	white-space: pre-wrap;
+	word-break: break-word;
+	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.scorefix-issue-preview__hint {
+	margin: 16px 0 0;
+	font-size: 12px;
+	line-height: 1.5;
+	max-width: 52rem;
+}
+
+.scorefix-issue-actions {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 6px;
+}
+
+.scorefix-issue-actions .button-small {
+	text-align: center;
+	border-radius: 8px;
+	font-weight: 600;
+}
+
+.scorefix-card--issues {
+	padding-bottom: 20px;
+}
+
+.scorefix-issues-pagination {
+	margin-top: 16px;
+	padding-top: 12px;
+	border-top: 1px solid #e2e8f0;
+}
+
+.scorefix-issues-pagination .tablenav-pages {
+	float: none;
+	margin: 0;
+	text-align: left;
+}
+
+.scorefix-issues-pagination .tablenav-pages a,
+.scorefix-issues-pagination .tablenav-pages span {
+	display: inline-block;
+	margin: 0 4px 4px 0;
 }

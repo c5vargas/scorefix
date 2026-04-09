@@ -42,7 +42,14 @@ class IssueSignature {
 				$discriminator = isset( $issue['src'] ) ? substr( (string) $issue['src'], 0, 160 ) : '';
 				break;
 			case 'input_no_label':
-				$discriminator = isset( $issue['type'] ) ? (string) $issue['type'] : '';
+				if ( isset( $issue['input_type'] ) ) {
+					$discriminator = (string) $issue['input_type'];
+				} elseif ( isset( $issue['type'] ) && 'input_no_label' !== (string) $issue['type'] ) {
+					// Legacy rows before input_type existed (type held the HTML input type).
+					$discriminator = (string) $issue['type'];
+				} else {
+					$discriminator = '';
+				}
 				break;
 			default:
 				$discriminator = '';

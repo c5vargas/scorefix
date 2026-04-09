@@ -276,9 +276,9 @@ class Scanner {
 				'input_no_label',
 				'high',
 				array(
-					'post_id' => (int) $post_id,
-					'type'    => $type,
-					'impact'  => 'conversion',
+					'post_id'    => (int) $post_id,
+					'input_type' => $type,
+					'impact'     => 'conversion',
 				)
 			);
 		}

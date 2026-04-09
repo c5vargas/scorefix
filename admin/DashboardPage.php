@@ -7,6 +7,7 @@
 
 namespace ScoreFix\Admin;
 
+use ScoreFix\Scanner\ScanComparison;
 use ScoreFix\Scanner\Scanner;
 
 defined( 'ABSPATH' ) || exit;
@@ -92,6 +93,8 @@ class DashboardPage {
 		if ( ! is_array( $scorefix_settings ) ) {
 			$scorefix_settings = array();
 		}
+
+		$scorefix_issues_view = self::build_issues_table_view( $issues );
 
 		include SCOREFIX_PLUGIN_DIR . 'admin/views/dashboard.php';
 	}
@@ -185,8 +188,17 @@ class DashboardPage {
 					__( 'This issue may reduce conversions: people may not understand what happens when they tap.', 'scorefix' ),
 				);
 			case 'input_no_label':
+				$input_t = isset( $issue['input_type'] ) ? sanitize_key( (string) $issue['input_type'] ) : '';
+				$title   = __( 'Form field without a label', 'scorefix' );
+				if ( '' !== $input_t ) {
+					$title = sprintf(
+						/* translators: %s: HTML input type, e.g. email */
+						__( 'Form field without a label (%s)', 'scorefix' ),
+						$input_t
+					);
+				}
 				return array(
-					__( 'Form field without a label', 'scorefix' ),
+					$title,
 					__( 'Fix this to improve readability and form completion — unclear fields increase abandonment.', 'scorefix' ),
 				);
 			case 'contrast_risk':
@@ -210,57 +222,377 @@ class DashboardPage {
 		$ratio = isset( $issue['ratio'] ) ? (float) $issue['ratio'] : null;
 		$ratio_txt = ( null !== $ratio && $ratio > 0 )
 			/* translators: %s: contrast ratio like 3.2 */
-			? sprintf( __( 'Estimated contrast ratio: %s:1 (WCAG suggests at least 4.5:1 for normal text).', 'scorefix' ), (string) $ratio )
+			? sprintf( __( 'Rough contrast is about %s:1; for normal text, 4.5:1 or higher is usually better.', 'scorefix' ), (string) $ratio )
 			: '';
 
 		switch ( $hint ) {
 			case 'same_color':
 				return array(
-					__( 'Contrast: text and background use the same color (inline)', 'scorefix' ),
-					__( 'The text is invisible or nearly invisible. Change either the text color or the background in your editor.', 'scorefix' )
+					__( 'Text and background look the same', 'scorefix' ),
+					__( 'Readers may not see this text. In the editor, change the text color or the background so they are clearly different.', 'scorefix' )
 					. ( $ratio_txt ? ' ' . $ratio_txt : '' ),
 				);
 			case 'low_ratio':
-				$desc = __( 'Foreground and background colors in the inline style likely fail WCAG contrast for normal text. Adjust colors in the block or custom CSS.', 'scorefix' );
+				$desc = __( 'The colors are too close together, so the text can be tiring or hard to read. Try a darker text color or a lighter (or stronger) background.', 'scorefix' );
 				if ( $ratio_txt ) {
 					$desc .= ' ' . $ratio_txt;
 				}
 				if ( ! empty( $issue['detail'] ) ) {
 					$desc .= ' ' . sprintf(
 						/* translators: %s: e.g. rgb(128,128,128) / rgb(127,127,127) */
-						__( 'Colors checked: %s.', 'scorefix' ),
+						__( 'Colors we compared: %s.', 'scorefix' ),
 						(string) $issue['detail']
 					);
 				}
 				return array(
-					__( 'Contrast: low color contrast (inline styles)', 'scorefix' ),
+					__( 'Text may be hard to read', 'scorefix' ),
 					$desc,
 				);
 			case 'low_contrast_assumed_page':
-				$desc = __( 'Text color is hard to read against a typical white page background (scanner assumes a white page when no solid background is set on this element). Set an explicit background or darken the text.', 'scorefix' );
+				$desc = __( 'This text may look weak on a white page. Darken the text a bit, or give it a soft background, so it stands out.', 'scorefix' );
 				if ( $ratio_txt ) {
 					$desc .= ' ' . $ratio_txt;
 				}
 				return array(
-					__( 'Contrast: text may be hard to read on the page', 'scorefix' ),
+					__( 'Text may blend into the page', 'scorefix' ),
 					$desc,
 				);
 			default:
-				$fallback = __( 'Fix this to improve readability — low contrast makes content harder to read on some screens.', 'scorefix' );
+				$fallback = __( 'Readers may struggle with this text on some screens. Adjust colors in the editor for clearer contrast.', 'scorefix' );
 				if ( $ratio_txt ) {
 					$fallback .= ' ' . $ratio_txt;
 				}
-				if ( ! empty( $issue['style_snippet'] ) ) {
-					$fallback .= ' ' . sprintf(
-						/* translators: %s: shortened style attribute */
-						__( 'Style: %s', 'scorefix' ),
-						(string) $issue['style_snippet']
-					);
-				}
 				return array(
-					__( 'Possible contrast issue (inline styles)', 'scorefix' ),
+					__( 'Possible contrast problem', 'scorefix' ),
 					$fallback,
 				);
 		}
+	}
+
+	/**
+	 * View model for the issues table: filtering, pagination, counts.
+	 *
+	 * @param array<int, mixed> $issues Raw issues from last scan.
+	 * @return array<string, mixed>
+	 */
+	public static function build_issues_table_view( array $issues ) {
+		$per_page = (int) apply_filters( 'scorefix_issues_per_page', 20 );
+		$per_page = max( 1, min( 100, $per_page ) );
+
+		$raw = array_values(
+			array_filter(
+				$issues,
+				static function ( $row ) {
+					return is_array( $row );
+				}
+			)
+		);
+
+		$filter_q = filter_input( INPUT_GET, 'sf_issue_filter', FILTER_UNSAFE_RAW );
+		$filter   = '';
+		if ( null !== $filter_q && false !== $filter_q ) {
+			$k = sanitize_key( wp_unslash( $filter_q ) );
+			if ( in_array( $k, array( 'error', 'warning' ), true ) ) {
+				$filter = $k;
+			}
+		}
+
+		$count_error   = 0;
+		$count_warning = 0;
+		foreach ( $raw as $iss ) {
+			$s = isset( $iss['severity'] ) ? (string) $iss['severity'] : '';
+			if ( ScanComparison::SEVERITY_ERROR === $s ) {
+				++$count_error;
+			} elseif ( ScanComparison::SEVERITY_WARNING === $s || 'low' === $s ) {
+				++$count_warning;
+			}
+		}
+
+		$filtered       = self::filter_issues_for_table( $raw, $filter );
+		$total_filtered = count( $filtered );
+
+		$page_q  = filter_input( INPUT_GET, 'sf_issues_page', FILTER_VALIDATE_INT );
+		$current = ( is_int( $page_q ) && $page_q > 0 ) ? $page_q : 1;
+
+		$total_pages = max( 1, (int) ceil( $total_filtered / $per_page ) );
+		if ( $current > $total_pages ) {
+			$current = $total_pages;
+		}
+		$offset = ( $current - 1 ) * $per_page;
+		$items  = array_slice( $filtered, $offset, $per_page );
+
+		$pagination = '';
+		if ( $total_pages > 1 ) {
+			$pagination = self::issues_paginate_links( $current, $total_pages, $filter );
+		}
+
+		return array(
+			'items'           => $items,
+			'filter'          => $filter,
+			'current_page'    => $current,
+			'per_page'        => $per_page,
+			'total_filtered'  => $total_filtered,
+			'total_all'       => count( $raw ),
+			'total_pages'     => $total_pages,
+			'pagination_html' => $pagination,
+			'count_error'     => $count_error,
+			'count_warning'   => $count_warning,
+			'display_from'    => $total_filtered > 0 ? $offset + 1 : 0,
+			'display_to'      => $total_filtered > 0 ? min( $offset + $per_page, $total_filtered ) : 0,
+		);
+	}
+
+	/**
+	 * @param array<int, array<string, mixed>> $issues Valid issue rows.
+	 * @param string                             $filter '', 'error', or 'warning'.
+	 * @return array<int, array<string, mixed>>
+	 */
+	public static function filter_issues_for_table( array $issues, $filter ) {
+		if ( '' === $filter ) {
+			return $issues;
+		}
+		$out = array();
+		foreach ( $issues as $issue ) {
+			$s = isset( $issue['severity'] ) ? (string) $issue['severity'] : '';
+			if ( 'error' === $filter && ScanComparison::SEVERITY_ERROR === $s ) {
+				$out[] = $issue;
+			}
+			if ( 'warning' === $filter && ( ScanComparison::SEVERITY_WARNING === $s || 'low' === $s ) ) {
+				$out[] = $issue;
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * Pagination markup for the issues table.
+	 *
+	 * @param int    $current     Current page (1-based).
+	 * @param int    $total_pages Total pages.
+	 * @param string $filter      Active severity filter slug.
+	 * @return string
+	 */
+	public static function issues_paginate_links( $current, $total_pages, $filter ) {
+		$base = admin_url( 'options-general.php?page=scorefix' );
+		if ( '' !== $filter ) {
+			$base = add_query_arg( 'sf_issue_filter', $filter, $base );
+		}
+		$keys = array( 'scorefix_scan', 'scorefix_fixes', 'scorefix_reminders' );
+		foreach ( $keys as $key ) {
+			$val = filter_input( INPUT_GET, $key, FILTER_UNSAFE_RAW );
+			if ( null !== $val && false !== $val && '' !== (string) $val ) {
+				$base = add_query_arg( $key, sanitize_text_field( wp_unslash( $val ) ), $base );
+			}
+		}
+		// paginate_links() requires a literal %#% placeholder; add_query_arg() would encode it.
+		$base .= ( false !== strpos( $base, '?' ) ? '&' : '?' ) . 'sf_issues_page=%#%';
+
+		return (string) paginate_links(
+			array(
+				'base'      => $base,
+				'format'    => '',
+				'current'   => max( 1, (int) $current ),
+				'total'     => max( 1, (int) $total_pages ),
+				'type'      => 'plain',
+				'prev_text' => __( '&laquo; Previous', 'scorefix' ),
+				'next_text' => __( 'Next &raquo;', 'scorefix' ),
+			)
+		);
+	}
+
+	/**
+	 * Severity tone for UI (matches metric chip themes).
+	 *
+	 * @param array<string, mixed> $issue Issue row.
+	 * @return string error|warning
+	 */
+	public static function issue_severity_tone( array $issue ) {
+		$s = isset( $issue['severity'] ) ? (string) $issue['severity'] : '';
+		if ( ScanComparison::SEVERITY_ERROR === $s ) {
+			return 'error';
+		}
+		return 'warning';
+	}
+
+	/**
+	 * @param array<string, mixed> $issue Issue row.
+	 * @return string
+	 */
+	public static function issue_severity_label( array $issue ) {
+		return 'error' === self::issue_severity_tone( $issue )
+			? __( 'Error', 'scorefix' )
+			: __( 'Warning', 'scorefix' );
+	}
+
+	/**
+	 * Human-readable source of the issue.
+	 *
+	 * @param array<string, mixed> $issue Issue row.
+	 * @return string
+	 */
+	public static function issue_context_label( array $issue ) {
+		$ctx = isset( $issue['context'] ) ? sanitize_text_field( (string) $issue['context'] ) : '';
+		if ( '' === $ctx ) {
+			return __( 'Post / page content', 'scorefix' );
+		}
+		if ( 'content' === $ctx ) {
+			return __( 'Post / page content', 'scorefix' );
+		}
+		if ( 'media_library' === $ctx ) {
+			return __( 'Media library', 'scorefix' );
+		}
+		return $ctx;
+	}
+
+	/**
+	 * Technical preview lines for the issue (scanner fields only).
+	 *
+	 * @param array<string, mixed> $issue Issue row.
+	 * @return array<int, array{key: string, label: string, value: string}>
+	 */
+	public static function issue_preview_fields( array $issue ) {
+		$rows  = array();
+		$itype = isset( $issue['type'] ) ? (string) $issue['type'] : '';
+
+		if ( ! empty( $issue['src'] ) ) {
+			$rows[] = array(
+				'key'   => 'src',
+				'label' => __( 'Image URL', 'scorefix' ),
+				'value' => (string) $issue['src'],
+			);
+		}
+		if ( ! empty( $issue['href'] ) ) {
+			$rows[] = array(
+				'key'   => 'href',
+				'label' => __( 'Link URL', 'scorefix' ),
+				'value' => (string) $issue['href'],
+			);
+		}
+		if ( 'input_no_label' === $itype && ! empty( $issue['input_type'] ) ) {
+			$rows[] = array(
+				'key'   => 'input_type',
+				'label' => __( 'Field type', 'scorefix' ),
+				'value' => sanitize_key( (string) $issue['input_type'] ),
+			);
+		}
+		if ( ! empty( $issue['style_snippet'] ) ) {
+			$rows[] = array(
+				'key'   => 'style_snippet',
+				'label' => __( 'Inline style (excerpt)', 'scorefix' ),
+				'value' => (string) $issue['style_snippet'],
+			);
+		}
+		if ( isset( $issue['ratio'] ) && (float) $issue['ratio'] > 0 ) {
+			$rows[] = array(
+				'key'   => 'ratio',
+				'label' => __( 'Contrast ratio (estimate)', 'scorefix' ),
+				'value' => (string) (float) $issue['ratio'] . ':1',
+			);
+		}
+		if ( ! empty( $issue['detail'] ) ) {
+			$rows[] = array(
+				'key'   => 'detail',
+				'label' => __( 'Color detail', 'scorefix' ),
+				'value' => (string) $issue['detail'],
+			);
+		}
+		if ( ! empty( $issue['hint'] ) && 'contrast_risk' === $itype ) {
+			$rows[] = array(
+				'key'   => 'hint',
+				'label' => __( 'Detection hint', 'scorefix' ),
+				'value' => sanitize_text_field( (string) $issue['hint'] ),
+			);
+		}
+		if ( ! empty( $issue['title'] ) && 'image_no_alt' === $itype ) {
+			$rows[] = array(
+				'key'   => 'title',
+				'label' => __( 'Media title', 'scorefix' ),
+				'value' => (string) $issue['title'],
+			);
+		}
+
+		return $rows;
+	}
+
+	/**
+	 * Default row actions (edit / view). Extensible via `scorefix_issue_actions`.
+	 *
+	 * @param array<string, mixed> $issue Issue row.
+	 * @return array<string, array{label: string, url: string, attrs?: array<string, string>}>
+	 */
+	public static function issue_row_actions( array $issue ) {
+		$post_id = isset( $issue['post_id'] ) ? (int) $issue['post_id'] : 0;
+		$actions = array();
+
+		if ( $post_id && current_user_can( 'edit_post', $post_id ) ) {
+			$url = get_edit_post_link( $post_id, 'raw' );
+			if ( is_string( $url ) && '' !== $url ) {
+				$actions['edit'] = array(
+					'label' => __( 'Edit', 'scorefix' ),
+					'url'   => $url,
+				);
+			}
+		}
+
+		if ( $post_id ) {
+			$post = get_post( $post_id );
+			if ( $post instanceof \WP_Post ) {
+				if ( 'attachment' === $post->post_type ) {
+					$file = wp_get_attachment_url( $post_id );
+					if ( is_string( $file ) && '' !== $file ) {
+						$actions['view_file'] = array(
+							'label' => __( 'View file', 'scorefix' ),
+							'url'   => $file,
+							'attrs' => array(
+								'target' => '_blank',
+								'rel'    => 'noopener noreferrer',
+							),
+						);
+					}
+				} elseif ( in_array( $post->post_status, array( 'publish', 'private' ), true ) ) {
+					$url = get_permalink( $post_id );
+					if ( is_string( $url ) && '' !== $url ) {
+						$actions['view'] = array(
+							'label' => __( 'View on site', 'scorefix' ),
+							'url'   => $url,
+							'attrs' => array(
+								'target' => '_blank',
+								'rel'    => 'noopener noreferrer',
+							),
+						);
+					}
+				}
+			}
+		}
+
+		/**
+		 * Filter actions shown for an issue row in the dashboard table.
+		 *
+		 * @param array<string, array<string, mixed>> $actions Associative list of action definitions.
+		 * @param array<string, mixed>              $issue   Issue row from scanner.
+		 */
+		$filtered = apply_filters( 'scorefix_issue_actions', $actions, $issue );
+		return is_array( $filtered ) ? $filtered : $actions;
+	}
+
+	/**
+	 * URL for issues table filter tabs.
+	 *
+	 * @param string $filter '', 'error', or 'warning'.
+	 * @return string
+	 */
+	public static function issues_filter_tab_url( $filter ) {
+		$args = array( 'page' => 'scorefix' );
+		if ( '' !== $filter ) {
+			$args['sf_issue_filter'] = $filter;
+		}
+		$keys = array( 'scorefix_scan', 'scorefix_fixes', 'scorefix_reminders' );
+		foreach ( $keys as $key ) {
+			$val = filter_input( INPUT_GET, $key, FILTER_UNSAFE_RAW );
+			if ( null !== $val && false !== $val && '' !== (string) $val ) {
+				$args[ $key ] = sanitize_text_field( wp_unslash( $val ) );
+			}
+		}
+		return add_query_arg( $args, admin_url( 'options-general.php' ) );
 	}
 }

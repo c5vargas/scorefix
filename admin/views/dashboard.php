@@ -4,7 +4,7 @@
  *
  * @package ScoreFix
  *
- * Variables: $score, $issues, $scanned, $fixes_on, $notice, $metrics, $show_metric_trend_hint, $perf_copy, $scorefix_settings
+ * Variables: $score, $issues, $scanned, $fixes_on, $notice, $metrics, $show_metric_trend_hint, $perf_copy, $scorefix_settings, $scorefix_issues_view
  */
 
 defined( 'ABSPATH' ) || exit;
