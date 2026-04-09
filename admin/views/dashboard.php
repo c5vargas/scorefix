@@ -11,12 +11,12 @@ defined( 'ABSPATH' ) || exit;
 
 ?>
 <div class="wrap scorefix-dashboard">
-
+	<h1 style="font-size: 0px;margin:0;padding:0;"><?php echo esc_html( get_admin_page_title() ); ?></h1>
 	<?php include SCOREFIX_PLUGIN_DIR . 'admin/views/partials/dashboard-notices.php'; ?>
 	<?php include SCOREFIX_PLUGIN_DIR . 'admin/views/partials/dashboard-pending-reminder.php'; ?>
 
 	<header class="scorefix-page-header">
-		<h1 class="scorefix-page-title"><?php echo esc_html( get_admin_page_title() ); ?></h1>
+		<h2 class="scorefix-page-title"><?php echo esc_html( get_admin_page_title() ); ?></h2>
 		<p class="scorefix-lead">
 			<?php esc_html_e( 'Fix your Lighthouse score and improve your UX in minutes. No coding required.', 'scorefix' ); ?>
 		</p>

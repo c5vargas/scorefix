@@ -121,6 +121,10 @@
 }
 
 /* Cron reminder — only on ScoreFix screen (below plugin header; avoids admin_notices slot) */
+.scorefix-notices {
+	margin: 0 0 16px 0;
+}
+
 .scorefix-reminder-banner {
 	display: flex;
 	flex-wrap: wrap;
@@ -635,6 +639,45 @@
 	box-shadow: 0 1px 3px rgba(22, 101, 52, 0.35);
 }
 
+/* Toggle UI driven by a real checkbox (e.g. reminders form) — same track/thumb as .scorefix-toggle button */
+.scorefix-toggle--form {
+	display: inline-block;
+	line-height: 0;
+	vertical-align: middle;
+}
+
+.scorefix-toggle__input {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+.scorefix-toggle--form:focus-within {
+	outline: 2px solid var(--scorefix-primary);
+	outline-offset: 3px;
+	border-radius: 999px;
+}
+
+.scorefix-toggle__input:focus {
+	outline: none;
+}
+
+.scorefix-toggle__input:checked + .scorefix-toggle__track {
+	background: #86efac;
+}
+
+.scorefix-toggle__input:checked + .scorefix-toggle__track .scorefix-toggle__thumb {
+	transform: translateX(20px);
+	background: #16a34a;
+	box-shadow: 0 1px 3px rgba(22, 101, 52, 0.35);
+}
+
 .scorefix-automation__chart {
 	margin-top: 18px;
 	flex: 1;
@@ -747,51 +790,71 @@
 }
 
 .scorefix-reminders__panel {
-	align-items: flex-start;
-	margin: 0;
-}
-
-.scorefix-reminders__panel .scorefix-automation__panel-text {
-	padding-top: 2px;
-}
-
-.scorefix-reminders__control {
-	flex-shrink: 0;
-	margin: 0;
-	padding-top: 2px;
-	display: flex;
 	align-items: center;
-	justify-content: flex-end;
+	margin: 0;
 }
 
-.scorefix-reminders__checkbox {
-	width: 18px;
-	height: 18px;
-	margin: 0;
-	border-radius: 4px;
-	accent-color: var(--scorefix-primary);
-	cursor: pointer;
-}
-
-.scorefix-reminders__select {
-	margin: 0;
-	min-width: 9.5rem;
+/* Segmented control (reminder frequency) — same gray track language as toggles */
+.scorefix-segmented {
+	display: inline-flex;
+	flex-shrink: 0;
+	padding: 3px;
+	background: #e2e8f0;
+	border-radius: 999px;
+	gap: 2px;
 	max-width: 100%;
-	padding: 6px 28px 6px 10px;
-	font-size: 13px;
-	line-height: 1.4;
-	border: 1px solid #e2e8f0;
-	border-radius: 8px;
-	background-color: #fff;
-	color: var(--scorefix-slate-900);
-	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-	cursor: pointer;
 }
 
-.scorefix-reminders__select:focus {
-	border-color: var(--scorefix-primary);
-	outline: 1px solid transparent;
-	box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+.scorefix-segmented__input {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+.scorefix-segmented__pill {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 28px;
+	padding: 2px 14px;
+	border-radius: 999px;
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 1.2;
+	letter-spacing: 0.01em;
+	color: var(--scorefix-slate-500);
+	cursor: pointer;
+	transition:
+		background 0.18s ease,
+		color 0.18s ease,
+		box-shadow 0.18s ease;
+	white-space: nowrap;
+	user-select: none;
+}
+
+.scorefix-segmented__input:checked + .scorefix-segmented__pill {
+	background: #fff;
+	color: var(--scorefix-slate-900);
+	box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);
+}
+
+.scorefix-segmented__input:focus {
+	outline: none;
+}
+
+.scorefix-segmented__input:focus-visible + .scorefix-segmented__pill {
+	outline: 2px solid var(--scorefix-primary);
+	outline-offset: 2px;
+}
+
+.scorefix-segmented__pill:hover {
+	color: var(--scorefix-slate-900);
 }
 
 .scorefix-reminders__footer-note {
