@@ -9,7 +9,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-$scorefix_notice_slugs = array( 'scan_done', 'fixes_on', 'fixes_off', 'reminders_saved' );
+$scorefix_notice_slugs = array( 'scan_done', 'fixes_on', 'fixes_off', 'reminders_saved', 'meta_saved' );
 if ( ! isset( $notice ) || ! is_string( $notice ) || ! in_array( $notice, $scorefix_notice_slugs, true ) ) {
 	return;
 }
@@ -41,6 +41,13 @@ if ( ! isset( $notice ) || ! is_string( $notice ) || ! in_array( $notice, $score
 			<p>
 				<span class="scorefix-notice__icon dashicons dashicons-yes-alt" aria-hidden="true"></span>
 				<span class="scorefix-notice__msg"><?php esc_html_e( 'Reminder settings saved.', 'scorefix' ); ?></span>
+			</p>
+		</div>
+	<?php elseif ( 'meta_saved' === $notice ) : ?>
+		<div class="notice notice-success is-dismissible scorefix-notice scorefix-notice--success">
+			<p>
+				<span class="scorefix-notice__icon dashicons dashicons-yes-alt" aria-hidden="true"></span>
+				<span class="scorefix-notice__msg"><?php esc_html_e( 'Meta description settings saved.', 'scorefix' ); ?></span>
 			</p>
 		</div>
 	<?php endif; ?>

@@ -44,6 +44,7 @@ class FixEngine {
 		$this->fix_links( $dom, $root );
 		$this->fix_buttons( $dom, $root );
 		$this->fix_inputs( $dom, $root );
+		$this->fix_selects_and_textareas( $dom, $root );
 
 		$out = '';
 		foreach ( $root->childNodes as $child ) {
@@ -78,6 +79,7 @@ class FixEngine {
 		$this->fix_links( $dom, $root );
 		$this->fix_buttons( $dom, $root );
 		$this->fix_inputs( $dom, $root );
+		$this->fix_selects_and_textareas( $dom, $root );
 
 		$out = $dom->saveHTML();
 		if ( ! is_string( $out ) || '' === $out ) {
@@ -225,7 +227,7 @@ class FixEngine {
 	 */
 	protected function fix_inputs( \DOMDocument $dom, \DOMElement $root ) {
 		$xpath = new \DOMXPath( $dom );
-		$input_types = array( 'text', 'email', 'tel', 'url', 'search', 'number', 'password' );
+		$input_types = array( 'text', 'email', 'tel', 'url', 'search', 'number', 'password', 'checkbox', 'radio' );
 		foreach ( $xpath->query( './/input', $root ) as $input ) {
 			if ( ! $input instanceof \DOMElement ) {
 				continue;
@@ -237,7 +239,7 @@ class FixEngine {
 			if ( ! in_array( $type, $input_types, true ) ) {
 				continue;
 			}
-			if ( $this->input_has_explicit_label( $input, $dom ) ) {
+			if ( $this->form_control_has_explicit_label( $input, $dom ) ) {
 				continue;
 			}
 			$name = trim( (string) $input->getAttribute( 'name' ) );
@@ -250,6 +252,40 @@ class FixEngine {
 				$input->setAttribute( 'aria-label', __( 'Field', 'scorefix' ) );
 			}
 			$this->bump_stat( 'input_aria' );
+		}
+	}
+
+	/**
+	 * Fix select and textarea without label (aria-label fallback).
+	 *
+	 * @param \DOMDocument $dom  Document.
+	 * @param \DOMElement  $root Root.
+	 * @return void
+	 */
+	protected function fix_selects_and_textareas( \DOMDocument $dom, \DOMElement $root ) {
+		$xpath = new \DOMXPath( $dom );
+		foreach ( array( 'select', 'textarea' ) as $tag ) {
+			foreach ( $xpath->query( './/' . $tag, $root ) as $el ) {
+				if ( ! $el instanceof \DOMElement ) {
+					continue;
+				}
+				if ( $this->form_control_has_explicit_label( $el, $dom ) ) {
+					continue;
+				}
+				$name = trim( (string) $el->getAttribute( 'name' ) );
+				$ph   = 'textarea' === $tag ? trim( (string) $el->getAttribute( 'placeholder' ) ) : '';
+				if ( $ph !== '' ) {
+					$el->setAttribute( 'aria-label', sanitize_text_field( $ph ) );
+				} elseif ( $name !== '' ) {
+					$el->setAttribute( 'aria-label', sanitize_text_field( str_replace( array( '-', '_' ), ' ', $name ) ) );
+				} else {
+					$el->setAttribute(
+						'aria-label',
+						'select' === $tag ? __( 'Selection', 'scorefix' ) : __( 'Field', 'scorefix' )
+					);
+				}
+				$this->bump_stat( 'input_aria' );
+			}
 		}
 	}
 
@@ -306,12 +342,14 @@ class FixEngine {
 	}
 
 	/**
-	 * @param \DOMElement   $input Input.
-	 * @param \DOMDocument $dom   Document.
+	 * Whether a form control already has an associated or computed accessible label.
+	 *
+	 * @param \DOMElement   $el  Input, select, or textarea.
+	 * @param \DOMDocument $dom Document.
 	 * @return bool
 	 */
-	protected function input_has_explicit_label( \DOMElement $input, \DOMDocument $dom ) {
-		$id = trim( (string) $input->getAttribute( 'id' ) );
+	protected function form_control_has_explicit_label( \DOMElement $el, \DOMDocument $dom ) {
+		$id = trim( (string) $el->getAttribute( 'id' ) );
 		if ( $id !== '' ) {
 			$xpath = new \DOMXPath( $dom );
 			$labels = $xpath->query( '//label[@for="' . self::xpath_escape( $id ) . '"]' );
@@ -319,13 +357,15 @@ class FixEngine {
 				return true;
 			}
 		}
-		if ( trim( (string) $input->getAttribute( 'aria-label' ) ) !== '' ) {
+		if ( trim( (string) $el->getAttribute( 'aria-label' ) ) !== '' ) {
 			return true;
 		}
-		if ( trim( (string) $input->getAttribute( 'aria-labelledby' ) ) !== '' ) {
+		if ( trim( (string) $el->getAttribute( 'aria-labelledby' ) ) !== '' ) {
 			return true;
 		}
-		return false;
+		$xpath = new \DOMXPath( $dom );
+		$wrap = $xpath->query( 'ancestor::label', $el );
+		return $wrap && $wrap->length > 0;
 	}
 
 	/**

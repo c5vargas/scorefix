@@ -11,6 +11,7 @@ use ScoreFix\Admin\ActionsController;
 use ScoreFix\Admin\DashboardPage;
 use ScoreFix\Admin\ReminderScheduler;
 use ScoreFix\Fixes\FixEngine;
+use ScoreFix\Frontend\MetaDescription;
 use ScoreFix\Frontend\RenderHooks;
 
 defined( 'ABSPATH' ) || exit;
@@ -34,11 +35,12 @@ class Plugin {
 	 */
 	public static function activate() {
 		$defaults = array(
-			'fixes_enabled'      => false,
-			'version'            => SCOREFIX_VERSION,
-			'reminders_enabled'  => false,
-			'reminder_frequency' => '3months',
-			'reminder_email'     => false,
+			'fixes_enabled'             => false,
+			'meta_description_enabled'  => true,
+			'version'                   => SCOREFIX_VERSION,
+			'reminders_enabled'         => false,
+			'reminder_frequency'        => '3months',
+			'reminder_email'            => false,
 		);
 		if ( false === get_option( 'scorefix_settings' ) ) {
 			add_option( 'scorefix_settings', $defaults );
@@ -82,6 +84,11 @@ class Plugin {
 
 		if ( self::fixes_enabled() ) {
 			$render->register( self::$loader );
+		}
+
+		if ( MetaDescription::is_enabled() ) {
+			$meta_desc = new MetaDescription();
+			$meta_desc->register( self::$loader );
 		}
 
 		self::$loader->run();

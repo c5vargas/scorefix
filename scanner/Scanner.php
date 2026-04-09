@@ -256,8 +256,8 @@ class Scanner {
 			}
 		}
 
-		// Inputs: text-like without label.
-		$input_types = array( 'text', 'email', 'tel', 'url', 'search', 'number', 'password' );
+		// Inputs: text-like, checkbox, and radio without label.
+		$input_types = array( 'text', 'email', 'tel', 'url', 'search', 'number', 'password', 'checkbox', 'radio' );
 		foreach ( $xpath->query( '//input' ) as $input ) {
 			if ( ! $input instanceof \DOMElement ) {
 				continue;
@@ -269,7 +269,7 @@ class Scanner {
 			if ( ! in_array( $type, $input_types, true ) ) {
 				continue;
 			}
-			if ( $this->input_has_label( $input, $dom ) ) {
+			if ( $this->form_control_has_label( $input, $dom ) ) {
 				continue;
 			}
 			$issues[] = $this->make_issue(
@@ -278,6 +278,42 @@ class Scanner {
 				array(
 					'post_id'    => (int) $post_id,
 					'input_type' => $type,
+					'impact'     => 'conversion',
+				)
+			);
+		}
+
+		// Select and textarea without label.
+		foreach ( $xpath->query( '//select' ) as $sel ) {
+			if ( ! $sel instanceof \DOMElement ) {
+				continue;
+			}
+			if ( $this->form_control_has_label( $sel, $dom ) ) {
+				continue;
+			}
+			$issues[] = $this->make_issue(
+				'input_no_label',
+				'high',
+				array(
+					'post_id'    => (int) $post_id,
+					'input_type' => 'select',
+					'impact'     => 'conversion',
+				)
+			);
+		}
+		foreach ( $xpath->query( '//textarea' ) as $ta ) {
+			if ( ! $ta instanceof \DOMElement ) {
+				continue;
+			}
+			if ( $this->form_control_has_label( $ta, $dom ) ) {
+				continue;
+			}
+			$issues[] = $this->make_issue(
+				'input_no_label',
+				'high',
+				array(
+					'post_id'    => (int) $post_id,
+					'input_type' => 'textarea',
 					'impact'     => 'conversion',
 				)
 			);
@@ -349,14 +385,14 @@ class Scanner {
 	}
 
 	/**
-	 * Whether input is associated with a label.
+	 * Whether input, select, or textarea is associated with a label (explicit or wrapping).
 	 *
-	 * @param \DOMElement   $input Input element.
-	 * @param \DOMDocument $dom   Document.
+	 * @param \DOMElement   $el  Element.
+	 * @param \DOMDocument $dom Document.
 	 * @return bool
 	 */
-	protected function input_has_label( \DOMElement $input, \DOMDocument $dom ) {
-		$id = trim( (string) $input->getAttribute( 'id' ) );
+	protected function form_control_has_label( \DOMElement $el, \DOMDocument $dom ) {
+		$id = trim( (string) $el->getAttribute( 'id' ) );
 		if ( $id !== '' ) {
 			$xpath = new \DOMXPath( $dom );
 			$labels = $xpath->query( '//label[@for="' . self::escape_xpath_literal( $id ) . '"]' );
@@ -364,18 +400,23 @@ class Scanner {
 				return true;
 			}
 		}
-		$aria = trim( (string) $input->getAttribute( 'aria-label' ) );
+		$aria = trim( (string) $el->getAttribute( 'aria-label' ) );
 		if ( $aria !== '' ) {
 			return true;
 		}
-		$alb = trim( (string) $input->getAttribute( 'aria-labelledby' ) );
+		$alb = trim( (string) $el->getAttribute( 'aria-labelledby' ) );
 		if ( $alb !== '' ) {
 			return true;
 		}
-		$placeholder = trim( (string) $input->getAttribute( 'placeholder' ) );
+		$xpath = new \DOMXPath( $dom );
+		$wrap = $xpath->query( 'ancestor::label', $el );
+		if ( $wrap && $wrap->length > 0 ) {
+			return true;
+		}
+		$placeholder = trim( (string) $el->getAttribute( 'placeholder' ) );
 		// Placeholder alone is weak; still flag as partial for MVP we require label or aria.
 		if ( $placeholder !== '' ) {
-			return apply_filters( 'scorefix_count_placeholder_as_label', false, $input );
+			return apply_filters( 'scorefix_count_placeholder_as_label', false, $el );
 		}
 		return false;
 	}

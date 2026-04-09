@@ -85,6 +85,10 @@ class DashboardPage {
 		if ( null !== $scorefix_reminders_q && false !== $scorefix_reminders_q && 'saved' === sanitize_key( wp_unslash( $scorefix_reminders_q ) ) ) {
 			$notice = 'reminders_saved';
 		}
+		$scorefix_meta_q = filter_input( INPUT_GET, 'scorefix_meta', FILTER_UNSAFE_RAW );
+		if ( null !== $scorefix_meta_q && false !== $scorefix_meta_q && 'saved' === sanitize_key( wp_unslash( $scorefix_meta_q ) ) ) {
+			$notice = 'meta_saved';
+		}
 
 		$perf_err  = isset( $metrics['active_errors']['value'] ) && null !== $metrics['active_errors']['value'] ? (int) $metrics['active_errors']['value'] : 0;
 		$perf_warn = isset( $metrics['warnings']['value'] ) && null !== $metrics['warnings']['value'] ? (int) $metrics['warnings']['value'] : 0;

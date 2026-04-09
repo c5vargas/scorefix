@@ -16,10 +16,11 @@ defined( 'ABSPATH' ) || exit;
  */
 class ActionsController {
 
-	const ACTION_RUN_SCAN       = 'scorefix_run_scan';
-	const ACTION_APPLY          = 'scorefix_apply_fixes';
-	const ACTION_DISABLE        = 'scorefix_disable_fixes';
-	const ACTION_SAVE_REMINDERS = 'scorefix_save_reminders';
+	const ACTION_RUN_SCAN            = 'scorefix_run_scan';
+	const ACTION_APPLY               = 'scorefix_apply_fixes';
+	const ACTION_DISABLE             = 'scorefix_disable_fixes';
+	const ACTION_SAVE_REMINDERS      = 'scorefix_save_reminders';
+	const ACTION_SAVE_META_DESC      = 'scorefix_save_meta_description';
 
 	/**
 	 * Handle admin actions.
@@ -82,6 +83,18 @@ class ActionsController {
 			update_option( 'scorefix_settings', $settings, false );
 			ReminderScheduler::reschedule_from_settings();
 			$this->redirect_with_arg( 'scorefix_reminders', 'saved' );
+		}
+
+		if ( self::ACTION_SAVE_META_DESC === $action ) {
+			check_admin_referer( self::ACTION_SAVE_META_DESC );
+			$settings = get_option( 'scorefix_settings', array() );
+			if ( ! is_array( $settings ) ) {
+				$settings = array();
+			}
+			$settings['meta_description_enabled'] = isset( $_POST['scorefix_meta_description_enabled'] );
+			$settings['version']                  = SCOREFIX_VERSION;
+			update_option( 'scorefix_settings', $settings, false );
+			$this->redirect_with_arg( 'scorefix_meta', 'saved' );
 		}
 	}
 
