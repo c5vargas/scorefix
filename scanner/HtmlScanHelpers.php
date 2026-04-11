@@ -101,4 +101,75 @@ class HtmlScanHelpers {
 		}
 		return "concat('" . str_replace( "'", "', \"'\", '", $s ) . "')";
 	}
+
+	/**
+	 * Simplified accessible name for generic phrase checks on links.
+	 * Returns null when aria-labelledby is set (skip heuristic).
+	 *
+	 * @param \DOMElement $a Anchor element.
+	 * @return string|null Normalized phrase, null to skip check.
+	 */
+	public static function link_display_name_for_generic_check( \DOMElement $a ) {
+		$aria = trim( (string) $a->getAttribute( 'aria-label' ) );
+		if ( '' !== $aria ) {
+			return self::normalize_human_phrase( $aria );
+		}
+		if ( '' !== trim( (string) $a->getAttribute( 'aria-labelledby' ) ) ) {
+			return null;
+		}
+		$title = trim( (string) $a->getAttribute( 'title' ) );
+		if ( '' !== $title ) {
+			return self::normalize_human_phrase( $title );
+		}
+		$imgs = $a->getElementsByTagName( 'img' );
+		if ( $imgs->length > 0 ) {
+			$img = $imgs->item( 0 );
+			if ( $img instanceof \DOMElement ) {
+				$alt = trim( (string) $img->getAttribute( 'alt' ) );
+				if ( '' !== $alt ) {
+					return self::normalize_human_phrase( $alt );
+				}
+			}
+		}
+		$text = trim( preg_replace( '/\s+/u', ' ', (string) ( $a->textContent ?? '' ) ) );
+		return self::normalize_human_phrase( $text );
+	}
+
+	/**
+	 * Whether a nav landmark has an accessible name (label / labelledby / title).
+	 *
+	 * @param \DOMElement $nav Nav element.
+	 * @return bool
+	 */
+	public static function nav_has_accessible_name( \DOMElement $nav ) {
+		$aria = trim( (string) $nav->getAttribute( 'aria-label' ) );
+		if ( '' !== $aria ) {
+			return true;
+		}
+		if ( '' !== trim( (string) $nav->getAttribute( 'aria-labelledby' ) ) ) {
+			return true;
+		}
+		$title = trim( (string) $nav->getAttribute( 'title' ) );
+		return '' !== $title;
+	}
+
+	/**
+	 * Lowercase trim and strip common punctuation for phrase matching.
+	 *
+	 * @param string $s Input.
+	 * @return string
+	 */
+	public static function normalize_human_phrase( $s ) {
+		$s = trim( (string) $s );
+		if ( '' === $s ) {
+			return '';
+		}
+		$s = preg_replace( '/\s+/u', ' ', $s );
+		$s = preg_replace( '/^[«»"\'“”]+|[«»"\'“”]+$/u', '', (string) $s );
+		$s = trim( (string) $s );
+		if ( function_exists( 'mb_strtolower' ) ) {
+			return mb_strtolower( $s, 'UTF-8' );
+		}
+		return strtolower( $s );
+	}
 }

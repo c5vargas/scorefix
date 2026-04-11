@@ -524,6 +524,105 @@ class DashboardPage {
 				'value' => (string) $issue['title'],
 			);
 		}
+		if ( 'heading_multiple_h1' === $itype && isset( $issue['h1_count'] ) ) {
+			$rows[] = array(
+				'key'   => 'h1_count',
+				'label' => __( 'H1 count', 'scorefix' ),
+				'value' => (string) (int) $issue['h1_count'],
+			);
+		}
+		if ( 'heading_level_skip' === $itype ) {
+			if ( ! empty( $issue['from_tag'] ) ) {
+				$rows[] = array(
+					'key'   => 'from_tag',
+					'label' => __( 'Previous heading', 'scorefix' ),
+					'value' => (string) $issue['from_tag'],
+				);
+			}
+			if ( ! empty( $issue['to_tag'] ) ) {
+				$rows[] = array(
+					'key'   => 'to_tag',
+					'label' => __( 'Skipped to', 'scorefix' ),
+					'value' => (string) $issue['to_tag'],
+				);
+			}
+		}
+		if ( 'landmark_multiple_main' === $itype && isset( $issue['main_count'] ) ) {
+			$rows[] = array(
+				'key'   => 'main_count',
+				'label' => __( 'Main regions', 'scorefix' ),
+				'value' => (string) (int) $issue['main_count'],
+			);
+		}
+		if ( 'landmark_nav_unnamed' === $itype ) {
+			if ( isset( $issue['nav_total'] ) ) {
+				$rows[] = array(
+					'key'   => 'nav_total',
+					'label' => __( 'Nav elements', 'scorefix' ),
+					'value' => (string) (int) $issue['nav_total'],
+				);
+			}
+			if ( isset( $issue['nav_unnamed'] ) ) {
+				$rows[] = array(
+					'key'   => 'nav_unnamed',
+					'label' => __( 'Without accessible name', 'scorefix' ),
+					'value' => (string) (int) $issue['nav_unnamed'],
+				);
+			}
+		}
+		if ( 'link_generic_text' === $itype && ! empty( $issue['link_text'] ) ) {
+			$rows[] = array(
+				'key'   => 'link_text',
+				'label' => __( 'Link text', 'scorefix' ),
+				'value' => (string) $issue['link_text'],
+			);
+		}
+		if ( 'form_radio_group_no_legend' === $itype && ! empty( $issue['group_name'] ) ) {
+			$rows[] = array(
+				'key'   => 'group_name',
+				'label' => __( 'Radio group name', 'scorefix' ),
+				'value' => (string) $issue['group_name'],
+			);
+		}
+		if ( 'form_required_no_error_hint' === $itype ) {
+			if ( ! empty( $issue['control_tag'] ) ) {
+				$rows[] = array(
+					'key'   => 'control_tag',
+					'label' => __( 'Element', 'scorefix' ),
+					'value' => sanitize_key( (string) $issue['control_tag'] ),
+				);
+			}
+			if ( ! empty( $issue['input_type'] ) ) {
+				$rows[] = array(
+					'key'   => 'input_type',
+					'label' => __( 'Control type', 'scorefix' ),
+					'value' => sanitize_key( (string) $issue['input_type'] ),
+				);
+			}
+		}
+		if ( 'form_autocomplete_missing' === $itype ) {
+			if ( ! empty( $issue['input_type'] ) ) {
+				$rows[] = array(
+					'key'   => 'input_type',
+					'label' => __( 'Control type', 'scorefix' ),
+					'value' => sanitize_key( (string) $issue['input_type'] ),
+				);
+			}
+			if ( ! empty( $issue['field_hint'] ) ) {
+				$rows[] = array(
+					'key'   => 'field_hint',
+					'label' => __( 'Field id/name hint', 'scorefix' ),
+					'value' => (string) $issue['field_hint'],
+				);
+			}
+		}
+		if ( isset( $issue['table_ordinal'] ) && ( 'table_missing_th' === $itype || 'table_missing_caption' === $itype ) ) {
+			$rows[] = array(
+				'key'   => 'table_ordinal',
+				'label' => __( 'Table index', 'scorefix' ),
+				'value' => (string) (int) $issue['table_ordinal'],
+			);
+		}
 
 		return $rows;
 	}

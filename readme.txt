@@ -4,7 +4,7 @@ Tags: lighthouse, accessibility, performance, SEO, WooCommerce
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -38,6 +38,7 @@ Fix the issues hurting your Lighthouse score and conversions in one click. No co
 * ScoreFix does **not** guarantee legal WCAG compliance or a perfect Lighthouse score.
 * **Semantic ALT** for SEO may still need your editorial judgment.
 * Highly dynamic JavaScript-only interfaces may need manual work outside the plugin.
+* **Extra scan rules** (headings, landmarks, tables, media, forms, generic links) are **heuristic** and may miss issues or flag false positives; tune behavior with filters documented in code where applicable.
 
 == Installation ==
 
@@ -64,6 +65,9 @@ No. ScoreFix does not rely on overlays to fake compliance.
 1. ScoreFix dashboard with score, issues, and actions.
 
 == Changelog ==
+
+= 1.0.1 =
+* Scanner: additional DOM heuristics (headings, landmarks, generic link text, form groups/autocomplete/required hints, video/audio/iframe, data tables). Heuristic only — not a WCAG guarantee.
 
 = 1.0.0 =
 * Initial release: scanner, ScoreFix Score, admin dashboard, runtime fix engine.

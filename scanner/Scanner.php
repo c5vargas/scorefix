@@ -10,9 +10,15 @@ namespace ScoreFix\Scanner;
 use ScoreFix\Fixes\FixEngine;
 use ScoreFix\Scanner\Rules\ButtonsRule;
 use ScoreFix\Scanner\Rules\ContrastInlineRule;
+use ScoreFix\Scanner\Rules\EmbeddedMediaRule;
 use ScoreFix\Scanner\Rules\FormControlsRule;
+use ScoreFix\Scanner\Rules\FormsSemanticsRule;
+use ScoreFix\Scanner\Rules\HeadingsRule;
 use ScoreFix\Scanner\Rules\ImagesRule;
+use ScoreFix\Scanner\Rules\LandmarksRule;
+use ScoreFix\Scanner\Rules\LinkGenericTextRule;
 use ScoreFix\Scanner\Rules\LinksRule;
+use ScoreFix\Scanner\Rules\TablesSemanticRule;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -39,12 +45,12 @@ class Scanner {
 		'landmark_multiple_main'         => 2,
 		'landmark_nav_unnamed'           => 1,
 		'link_generic_text'              => 2,
-		'form_radio_group_no_legend'     => 2,
+		'form_radio_group_no_legend'    => 2,
 		'form_required_no_error_hint'   => 1,
 		'form_autocomplete_missing'      => 1,
 		'video_no_text_track'            => 2,
 		'audio_no_text_track'            => 2,
-		'iframe_missing_title'          => 3,
+		'iframe_missing_title'           => 3,
 		'table_missing_th'               => 2,
 		'table_missing_caption'          => 1,
 	);
@@ -220,11 +226,18 @@ class Scanner {
 		$xpath = new \DOMXPath( $dom );
 
 		$maker = array( $this, 'create_issue' );
-		$issues = array_merge( $issues, ImagesRule::collect( $xpath, (int) $post_id, $maker ) );
-		$issues = array_merge( $issues, LinksRule::collect( $xpath, (int) $post_id, $maker ) );
-		$issues = array_merge( $issues, ButtonsRule::collect( $xpath, (int) $post_id, $maker ) );
-		$issues = array_merge( $issues, FormControlsRule::collect( $xpath, $dom, (int) $post_id, $maker ) );
-		$issues = array_merge( $issues, ContrastInlineRule::collect( $xpath, (int) $post_id, $maker ) );
+		$pid   = (int) $post_id;
+		$issues = array_merge( $issues, HeadingsRule::collect( $xpath, $pid, $maker ) );
+		$issues = array_merge( $issues, LandmarksRule::collect( $xpath, $pid, $maker ) );
+		$issues = array_merge( $issues, ImagesRule::collect( $xpath, $pid, $maker ) );
+		$issues = array_merge( $issues, LinksRule::collect( $xpath, $pid, $maker ) );
+		$issues = array_merge( $issues, LinkGenericTextRule::collect( $xpath, $pid, $maker ) );
+		$issues = array_merge( $issues, ButtonsRule::collect( $xpath, $pid, $maker ) );
+		$issues = array_merge( $issues, FormControlsRule::collect( $xpath, $dom, $pid, $maker ) );
+		$issues = array_merge( $issues, FormsSemanticsRule::collect( $xpath, $pid, $maker ) );
+		$issues = array_merge( $issues, ContrastInlineRule::collect( $xpath, $pid, $maker ) );
+		$issues = array_merge( $issues, EmbeddedMediaRule::collect( $xpath, $pid, $maker ) );
+		$issues = array_merge( $issues, TablesSemanticRule::collect( $xpath, $pid, $maker ) );
 
 		return $issues;
 	}
