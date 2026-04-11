@@ -11,6 +11,7 @@ use ScoreFix\Scanner\IssueGlossary;
 use ScoreFix\Scanner\RenderScanQueue;
 use ScoreFix\Scanner\ScanComparison;
 use ScoreFix\Scanner\Scanner;
+use ScoreFix\Scanner\ScoreHistory;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -147,7 +148,51 @@ class DashboardPage {
 
 		$render_scan_state = RenderScanQueue::get_background_scan_state();
 
+		$comparison = ( is_array( $scan ) && isset( $scan['comparison'] ) && is_array( $scan['comparison'] ) )
+			? $scan['comparison']
+			: array();
+		$impact_estimate     = ConversionImpactEstimate::for_last_scan( $scan );
+		$score_history       = ScoreHistory::get_entries();
+		$deferred_meta       = DeferredScanScheduler::get_pending_meta();
+		$last_settings_event = DeferredScanScheduler::get_last_settings_event();
+
 		include SCOREFIX_PLUGIN_DIR . 'admin/views/dashboard.php';
+	}
+
+	/**
+	 * Label for a deferred-scan reason slug (fixes / SEO).
+	 *
+	 * @param string $slug Reason key.
+	 * @return string
+	 */
+	public static function settings_impact_reason_label( $slug ) {
+		$slug = sanitize_key( (string) $slug );
+		switch ( $slug ) {
+			case 'fixes_on':
+				return __( 'Automatic fixes enabled', 'scorefix' );
+			case 'fixes_off':
+				return __( 'Automatic fixes disabled', 'scorefix' );
+			case 'meta_description':
+				return __( 'SEO meta description setting saved', 'scorefix' );
+			default:
+				return __( 'Settings updated', 'scorefix' );
+		}
+	}
+
+	/**
+	 * Short label for score history row trigger.
+	 *
+	 * @param string $slug Trigger slug.
+	 * @return string
+	 */
+	public static function score_history_trigger_label( $slug ) {
+		$slug = sanitize_key( (string) $slug );
+		$map  = array(
+			'manual'                => __( 'Manual scan', 'scorefix' ),
+			'after_settings_change' => __( 'Validation after settings', 'scorefix' ),
+			'render_urls_merged'    => __( 'Rendered URLs merged', 'scorefix' ),
+		);
+		return isset( $map[ $slug ] ) ? $map[ $slug ] : $slug;
 	}
 
 	/**

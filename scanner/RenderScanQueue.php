@@ -9,6 +9,7 @@ namespace ScoreFix\Scanner;
 
 use ScoreFix\Scanner\Rules\HeadSeoRule;
 use ScoreFix\Scanner\Rules\JsonLdSeoRule;
+use ScoreFix\Scanner\ScoreHistory;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -179,11 +180,12 @@ class RenderScanQueue {
 	/**
 	 * Start queue after a sync scan (posts + attachments snapshot already saved).
 	 *
-	 * @param bool  $had_prior_scan Whether a scan existed before this run.
-	 * @param array $prev_issues    Issues from snapshot before this run (for comparison on finalize).
+	 * @param bool     $had_prior_scan Whether a scan existed before this run.
+	 * @param array    $prev_issues    Issues from snapshot before this run (for comparison on finalize).
+	 * @param int|null $prior_score    Score from snapshot before this run (for delta after merge).
 	 * @return void
 	 */
-	public static function start_after_sync_scan( $had_prior_scan, array $prev_issues ) {
+	public static function start_after_sync_scan( $had_prior_scan, array $prev_issues, $prior_score = null ) {
 		if ( apply_filters( 'scorefix_skip_render_url_scan', false ) ) {
 			return;
 		}
@@ -207,6 +209,7 @@ class RenderScanQueue {
 			'fetch_token'    => $token,
 			'had_prior_scan' => (bool) $had_prior_scan,
 			'prev_issues'    => $prev_issues,
+			'prior_score'    => null !== $prior_score ? (int) $prior_score : null,
 		);
 		update_option( self::OPTION_QUEUE, $queue, false );
 
@@ -318,13 +321,19 @@ class RenderScanQueue {
 
 		$had_prior = ! empty( $queue['had_prior_scan'] );
 		$prev      = isset( $queue['prev_issues'] ) && is_array( $queue['prev_issues'] ) ? $queue['prev_issues'] : array();
+		$prior_sc  = isset( $queue['prior_score'] ) ? $queue['prior_score'] : null;
+		$prior_sc  = null !== $prior_sc ? (int) $prior_sc : null;
+
+		$completed_at = gmdate( 'c' );
 
 		$scan['issues']     = $merged;
 		$scan['score']      = $score;
-		$scan['comparison'] = ScanComparison::build( $had_prior, $prev, $merged );
-		$scan['render_scan_completed_at'] = gmdate( 'c' );
+		$scan['comparison'] = ScanComparison::build( $had_prior, $prev, $merged, $prior_sc, $score );
+		$scan['render_scan_completed_at'] = $completed_at;
 
 		update_option( Scanner::OPTION_LAST_SCAN, $scan, false );
+
+		ScoreHistory::record_event( $score, 'render_urls_merged', $completed_at );
 	}
 
 	/**

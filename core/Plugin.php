@@ -9,6 +9,7 @@ namespace ScoreFix\Core;
 
 use ScoreFix\Admin\ActionsController;
 use ScoreFix\Admin\DashboardPage;
+use ScoreFix\Admin\DeferredScanScheduler;
 use ScoreFix\Admin\ReminderScheduler;
 use ScoreFix\Fixes\FixEngine;
 use ScoreFix\Frontend\MetaDescription;
@@ -82,6 +83,7 @@ class Plugin {
 		self::$loader->add_action( 'admin_init', $actions, 'handle_actions', 10, 0 );
 
 		RenderScanQueue::register( self::$loader );
+		DeferredScanScheduler::register( self::$loader );
 
 		$fix_engine = new FixEngine();
 		$render     = new RenderHooks( $fix_engine );

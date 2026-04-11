@@ -93,14 +93,24 @@ class Scanner {
 	/**
 	 * Run full scan and persist snapshot.
 	 *
+	 * @param array<string, mixed> $args Optional. `trigger` (string): scan reason for history/UI.
 	 * @return array<string, mixed> Snapshot including optional comparison vs previous scan.
 	 */
-	public function run() {
+	public function run( array $args = array() ) {
+		$trigger = isset( $args['trigger'] ) ? sanitize_key( (string) $args['trigger'] ) : 'manual';
+		if ( '' === $trigger ) {
+			$trigger = 'manual';
+		}
+
 		$previous   = get_option( self::OPTION_LAST_SCAN, null );
 		$had_prior  = is_array( $previous ) && isset( $previous['scanned_at'] );
 		$prev_issues = array();
+		$prior_score = null;
 		if ( $had_prior && isset( $previous['issues'] ) && is_array( $previous['issues'] ) ) {
 			$prev_issues = $previous['issues'];
+		}
+		if ( $had_prior && isset( $previous['score'] ) ) {
+			$prior_score = (int) $previous['score'];
 		}
 
 		$issues = array();
@@ -164,12 +174,15 @@ class Scanner {
 			'scanned_post_ids'       => $scanned_post_ids,
 			'scanned_attachment_ids' => $scanned_attachment_ids,
 			'score_model'            => 'per_page_average_v3_blend',
-			'comparison'             => ScanComparison::build( $had_prior, $prev_for_compare, $issues ),
+			'comparison'             => ScanComparison::build( $had_prior, $prev_for_compare, $issues, $prior_score, $score ),
+			'scan_trigger'           => $trigger,
 		);
 
 		update_option( self::OPTION_LAST_SCAN, $snapshot, false );
 
-		RenderScanQueue::start_after_sync_scan( $had_prior, $prev_issues );
+		ScoreHistory::record_from_snapshot( $snapshot );
+
+		RenderScanQueue::start_after_sync_scan( $had_prior, $prev_issues, $prior_score );
 
 		return $snapshot;
 	}

@@ -30,9 +30,11 @@ class ScanComparison {
 	 * @param bool                      $had_prior_scan Whether a snapshot existed before this run.
 	 * @param array<int, array<string, mixed>> $prev_issues Issues from the previous snapshot.
 	 * @param array<int, array<string, mixed>> $curr_issues Issues from the current scan.
+	 * @param int|null                  $prior_score    Score from the previous snapshot (0–100), if known.
+	 * @param int|null                  $current_score  Score for the current snapshot (0–100).
 	 * @return array<string, mixed>
 	 */
-	public static function build( $had_prior_scan, array $prev_issues, array $curr_issues ) {
+	public static function build( $had_prior_scan, array $prev_issues, array $curr_issues, $prior_score = null, $current_score = null ) {
 		$curr_errors    = self::count_severity( $curr_issues, self::SEVERITY_ERROR );
 		$curr_warnings  = self::count_severity( $curr_issues, self::SEVERITY_WARNING );
 		$prior_errors   = self::count_severity( $prev_issues, self::SEVERITY_ERROR );
@@ -48,14 +50,27 @@ class ScanComparison {
 			}
 		}
 
+		$prior_score_int   = null !== $prior_score ? (int) $prior_score : null;
+		$current_score_int = null !== $current_score ? (int) $current_score : null;
+		$score_delta       = null;
+		$score_delta_ok    = false;
+		if ( $had_prior_scan && null !== $prior_score_int && null !== $current_score_int ) {
+			$score_delta    = $current_score_int - $prior_score_int;
+			$score_delta_ok = true;
+		}
+
 		return array(
-			'has_prior'       => (bool) $had_prior_scan,
-			'current_errors'  => $curr_errors,
-			'current_warnings'=> $curr_warnings,
-			'prior_errors'    => $prior_errors,
-			'prior_warnings'  => $prior_warnings,
-			'prior_total'     => $prior_total,
-			'resolved_count'  => $resolved,
+			'has_prior'             => (bool) $had_prior_scan,
+			'current_errors'        => $curr_errors,
+			'current_warnings'      => $curr_warnings,
+			'prior_errors'            => $prior_errors,
+			'prior_warnings'          => $prior_warnings,
+			'prior_total'             => $prior_total,
+			'resolved_count'          => $resolved,
+			'prior_score'             => $prior_score_int,
+			'current_score'           => $current_score_int,
+			'score_delta'             => $score_delta_ok ? $score_delta : null,
+			'score_delta_available'   => $score_delta_ok,
 		);
 	}
 

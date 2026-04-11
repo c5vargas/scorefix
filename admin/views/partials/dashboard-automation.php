@@ -1,16 +1,26 @@
 <?php
 /**
- * Automation sidebar card: run scan, automatic fixes toggle, last scan footer.
+ * Automation sidebar card: run scan, automatic fixes, last scan footer.
  *
  * @package ScoreFix
  *
  * @var bool   $fixes_on
  * @var string $scanned ISO datetime or empty.
+ * @var array<string, mixed> $deferred_meta Pending deferred scan meta (optional).
+ * @var array{reason: string, at: string} $last_settings_event Last settings change (optional).
  */
 
 defined( 'ABSPATH' ) || exit;
 
 use ScoreFix\Admin\ActionsController;
+use ScoreFix\Admin\DashboardPage;
+
+if ( ! isset( $deferred_meta ) || ! is_array( $deferred_meta ) ) {
+	$deferred_meta = array();
+}
+if ( ! isset( $last_settings_event ) || ! is_array( $last_settings_event ) ) {
+	$last_settings_event = array( 'reason' => '', 'at' => '' );
+}
 
 ?>
 <div class="scorefix-card scorefix-card--automation">
@@ -50,9 +60,33 @@ use ScoreFix\Admin\ActionsController;
 			<?php endif; ?>
 		</div>
 	</div>
+
 	<div class="scorefix-automation__chart" aria-hidden="true">
 		<div class="scorefix-automation__chart-inner"></div>
 	</div>
+	<?php if ( ! empty( $deferred_meta['run_after'] ) ) : ?>
+		<p class="scorefix-deferred-notice scorefix-muted" role="status">
+			<span class="dashicons dashicons-clock" aria-hidden="true"></span>
+			<?php esc_html_e( 'A validation scan is scheduled to refresh your score after the latest settings change.', 'scorefix' ); ?>
+		</p>
+	<?php elseif ( ! empty( $last_settings_event['at'] ) && ! empty( $last_settings_event['reason'] ) ) : ?>
+		<p class="scorefix-settings-event scorefix-muted">
+			<?php
+			$scorefix_ev_at = strtotime( (string) $last_settings_event['at'] );
+			$scorefix_ev_label = $scorefix_ev_at
+				? wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $scorefix_ev_at )
+				: '';
+			echo esc_html(
+				sprintf(
+					/* translators: 1: human reason, 2: formatted datetime */
+					__( 'Last settings change: %1$s (%2$s)', 'scorefix' ),
+					DashboardPage::settings_impact_reason_label( (string) $last_settings_event['reason'] ),
+					$scorefix_ev_label
+				)
+			);
+			?>
+		</p>
+	<?php endif; ?>
 	<p class="scorefix-automation__footer scorefix-muted">
 		<?php
 		if ( $scanned ) {

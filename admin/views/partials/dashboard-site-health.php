@@ -1,6 +1,6 @@
 <?php
 /**
- * Site health card (score, donut, metrics).
+ * Site health card (score, donut, metrics) — quick overview only.
  *
  * @package ScoreFix
  *
@@ -22,7 +22,7 @@ use ScoreFix\Admin\DashboardPage;
 			<p class="scorefix-performance__headline" role="heading" aria-level="2"><?php echo esc_html( $perf_copy['headline'] ); ?></p>
 			<p class="scorefix-performance__sub"><?php echo esc_html( $perf_copy['sub'] ); ?></p>
 			<p class="scorefix-performance__note scorefix-muted">
-				<?php esc_html_e( 'The overall score blends accessibility, SEO, and local performance signals from your content. Rendered-URL issues and heavy lab metrics are out of scope here—use PSI or your host for deep speed work.', 'scorefix' ); ?>
+				<?php esc_html_e( 'Blends accessibility, SEO, and light performance signals from your published content.', 'scorefix' ); ?>
 			</p>
 		</div>
 		<div class="scorefix-donut-wrap">

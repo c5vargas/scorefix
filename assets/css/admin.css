@@ -583,9 +583,9 @@
 }
 
 .scorefix-metric-chip__icon .dashicons {
-	width: 22px;
-	height: 22px;
-	font-size: 22px;
+	width: 28px;
+	height: 28px;
+	font-size: 28px;
 	line-height: 1;
 }
 
@@ -1261,8 +1261,7 @@
 
 .scorefix-issue-heading {
 	display: flex;
-	flex-wrap: wrap;
-	align-items: flex-start;
+	flex-direction: column;
 	gap: 10px 14px;
 }
 
@@ -1280,7 +1279,6 @@
 }
 
 .scorefix-issue-heading .scorefix-issue-title {
-	flex: 1 1 12rem;
 	min-width: 0;
 	margin: 0;
 	font-size: 14px;
@@ -1715,4 +1713,195 @@
 .scorefix-issues-pagination .tablenav-pages a.prev.page-numbers:hover,
 .scorefix-issues-pagination .tablenav-pages a.next.page-numbers:hover {
 	color: var(--scorefix-primary);
+}
+
+/* Score history card: latest comparison + impact + log */
+.scorefix-card--timeline-compact {
+	padding-top: 18px;
+	padding-bottom: 18px;
+	opacity: 0.98;
+}
+
+.scorefix-timeline-compact__title {
+	margin: 0 0 6px;
+	font-size: 14px;
+	font-weight: 800;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--scorefix-primary);
+}
+
+.scorefix-timeline-compact__lead {
+	margin: 0 0 14px;
+	font-size: 12px;
+	line-height: 1.45;
+}
+
+.scorefix-timeline-compact__insight {
+	margin: 0 0 14px;
+}
+
+.scorefix-timeline-compact__delta-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.scorefix-timeline-compact__delta-label {
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--scorefix-slate-500);
+}
+
+.scorefix-timeline-compact__delta-value {
+	font-size: 1.35rem;
+	font-weight: 800;
+	font-variant-numeric: tabular-nums;
+	line-height: 1;
+}
+
+.scorefix-timeline-compact__delta-value.is-up {
+	color: #15803d;
+}
+
+.scorefix-timeline-compact__delta-value.is-down {
+	color: #b91c1c;
+}
+
+.scorefix-timeline-compact__impact {
+	margin-top: 10px;
+	padding: 10px 12px;
+	border-radius: 8px;
+	border: 1px dashed rgba(37, 99, 235, 0.22);
+	background: rgba(255, 255, 255, 0.75);
+}
+
+.scorefix-timeline-compact__impact-band {
+	margin: 0 0 6px;
+	font-size: 12px;
+	line-height: 1.45;
+	color: var(--scorefix-slate-700);
+}
+
+.scorefix-timeline-compact__impact-disclaimer {
+	margin: 0;
+	font-size: 11px;
+	line-height: 1.4;
+}
+
+.scorefix-timeline-compact__log-label {
+	margin: 0 0 8px;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--scorefix-slate-500);
+}
+
+.scorefix-timeline-compact__empty {
+	margin: 0;
+	font-size: 12px;
+	line-height: 1.45;
+}
+
+.scorefix-timeline-compact__insight + .scorefix-timeline-compact__empty {
+	margin-top: 4px;
+}
+
+.scorefix-timeline-compact__list {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	counter-reset: scorefix-timeline;
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+	border-radius: 10px;
+	border: 1px solid #e2e8f0;
+	overflow: hidden;
+	background: rgba(255, 255, 255, 0.5);
+}
+
+.scorefix-timeline-compact__item {
+	display: flex;
+	align-items: stretch;
+	gap: 0;
+	margin: 0;
+	padding: 0;
+	border-bottom: 1px solid rgba(226, 232, 240, 0.85);
+}
+
+.scorefix-timeline-compact__item:last-child {
+	border-bottom: none;
+}
+
+.scorefix-timeline-compact__pill {
+	flex-shrink: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 44px;
+	padding: 10px 8px;
+	font-size: 15px;
+	font-weight: 800;
+	font-variant-numeric: tabular-nums;
+	color: var(--scorefix-slate-900);
+	background: var(--scorefix-slate-50);
+	border-right: 1px solid rgba(226, 232, 240, 0.9);
+}
+
+.scorefix-timeline-compact__pill--tone-bad {
+	background: rgba(220, 38, 38, 0.08);
+	color: #991b1b;
+}
+
+.scorefix-timeline-compact__pill--tone-warn {
+	background: rgba(234, 88, 12, 0.1);
+	color: #9a3412;
+}
+
+.scorefix-timeline-compact__pill--tone-good {
+	background: rgba(22, 163, 74, 0.1);
+	color: #166534;
+}
+
+.scorefix-timeline-compact__body {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	gap: 2px;
+	padding: 8px 12px;
+	min-width: 0;
+}
+
+.scorefix-timeline-compact__datetime {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--scorefix-slate-800);
+	line-height: 1.35;
+}
+
+.scorefix-timeline-compact__trigger {
+	font-size: 11px;
+	line-height: 1.35;
+}
+
+.scorefix-deferred-notice,
+.scorefix-settings-event {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	margin: 0 0 10px;
+	font-size: 12px;
+	line-height: 1.45;
+}
+
+.scorefix-deferred-notice .dashicons {
+	margin-top: 2px;
+	flex-shrink: 0;
+	opacity: 0.85;
 }

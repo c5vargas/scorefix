@@ -40,8 +40,9 @@ class ActionsController {
 
 		if ( self::ACTION_RUN_SCAN === $action ) {
 			check_admin_referer( self::ACTION_RUN_SCAN );
+			DeferredScanScheduler::cancel_pending();
 			$scanner = new Scanner();
-			$scanner->run();
+			$scanner->run( array( 'trigger' => 'manual' ) );
 			ReminderScheduler::clear_pending();
 			$this->redirect_with_arg( 'scorefix_scan', 'done' );
 		}
@@ -55,6 +56,7 @@ class ActionsController {
 			$settings['fixes_enabled'] = true;
 			$settings['version']       = SCOREFIX_VERSION;
 			update_option( 'scorefix_settings', $settings, false );
+			DeferredScanScheduler::schedule_validation_scan( 'fixes_on' );
 			$this->redirect_with_arg( 'scorefix_fixes', 'on' );
 		}
 
@@ -66,6 +68,7 @@ class ActionsController {
 			}
 			$settings['fixes_enabled'] = false;
 			update_option( 'scorefix_settings', $settings, false );
+			DeferredScanScheduler::schedule_validation_scan( 'fixes_off' );
 			$this->redirect_with_arg( 'scorefix_fixes', 'off' );
 		}
 
@@ -94,6 +97,7 @@ class ActionsController {
 			$settings['meta_description_enabled'] = isset( $_POST['scorefix_meta_description_enabled'] );
 			$settings['version']                  = SCOREFIX_VERSION;
 			update_option( 'scorefix_settings', $settings, false );
+			DeferredScanScheduler::schedule_validation_scan( 'meta_description' );
 			$this->redirect_with_arg( 'scorefix_meta', 'saved' );
 		}
 	}

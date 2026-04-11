@@ -44,9 +44,10 @@ class DashboardMetrics {
 		}
 
 		$issues = $scan['issues'];
+		$curr   = isset( $scan['score'] ) ? (int) $scan['score'] : null;
 		$comp   = isset( $scan['comparison'] ) && is_array( $scan['comparison'] )
 			? $scan['comparison']
-			: ScanComparison::build( false, array(), $issues );
+			: ScanComparison::build( false, array(), $issues, null, $curr );
 
 		$has_prior       = ! empty( $comp['has_prior'] );
 		$curr_err        = (int) ( $comp['current_errors'] ?? 0 );
