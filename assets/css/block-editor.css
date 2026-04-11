@@ -1,0 +1,42 @@
+/* Block editor — ScoreFix document panel */
+.scorefix-doc-panel .scorefix-doc-panel__list {
+	margin: 0;
+	padding-left: 1.1em;
+	list-style: disc;
+}
+
+.scorefix-doc-panel .scorefix-doc-panel__item {
+	margin-bottom: 0.65em;
+	font-size: 12px;
+	line-height: 1.45;
+}
+
+.scorefix-doc-panel .scorefix-doc-panel__item-title {
+	display: block;
+	font-weight: 600;
+	margin-bottom: 2px;
+}
+
+.scorefix-doc-panel .scorefix-doc-panel__meta {
+	opacity: 0.85;
+	font-size: 11px;
+}
+
+.scorefix-doc-panel .scorefix-doc-panel__score {
+	font-size: 12px;
+	margin: 0 0 8px;
+}
+
+.scorefix-doc-panel .components-button.is-link {
+	padding-left: 0;
+	height: auto;
+}
+
+/* Media modal — attachment compat */
+.scorefix-attachment-alt-notice {
+	border-left: 3px solid #dba617;
+	padding: 8px 10px;
+	margin: 8px 0 0;
+	background: #fcf9e8;
+	color: #1d2327;
+}

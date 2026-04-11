@@ -636,4 +636,62 @@ class Scanner {
 		$data = get_option( self::OPTION_LAST_SCAN, null );
 		return is_array( $data ) ? $data : null;
 	}
+
+	/**
+	 * Issues from last snapshot whose post_id matches (post content, attachment row, etc.).
+	 *
+	 * @param int $post_id Post or attachment ID.
+	 * @return array<int, array<string, mixed>>
+	 */
+	public static function get_issues_for_post_id( $post_id ) {
+		$post_id = (int) $post_id;
+		if ( $post_id <= 0 ) {
+			return array();
+		}
+		$scan = self::get_last_scan();
+		if ( ! is_array( $scan ) || empty( $scan['issues'] ) || ! is_array( $scan['issues'] ) ) {
+			return array();
+		}
+		$out = array();
+		foreach ( $scan['issues'] as $issue ) {
+			if ( ! is_array( $issue ) ) {
+				continue;
+			}
+			if ( (int) ( $issue['post_id'] ?? 0 ) === $post_id ) {
+				$out[] = $issue;
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * Whether this post/attachment was part of the last scan inputs (published batch or media library pass).
+	 *
+	 * @param int $post_id Post or attachment ID.
+	 * @return bool
+	 */
+	public static function was_in_last_scan_scope( $post_id ) {
+		$post_id = (int) $post_id;
+		if ( $post_id <= 0 ) {
+			return false;
+		}
+		$scan = self::get_last_scan();
+		if ( ! is_array( $scan ) ) {
+			return false;
+		}
+		$post = get_post( $post_id );
+		if ( ! $post instanceof \WP_Post ) {
+			return false;
+		}
+		if ( 'attachment' === $post->post_type ) {
+			$ids = isset( $scan['scanned_attachment_ids'] ) && is_array( $scan['scanned_attachment_ids'] )
+				? $scan['scanned_attachment_ids']
+				: array();
+			return in_array( $post_id, array_map( 'intval', $ids ), true );
+		}
+		$ids = isset( $scan['scanned_post_ids'] ) && is_array( $scan['scanned_post_ids'] )
+			? $scan['scanned_post_ids']
+			: array();
+		return in_array( $post_id, array_map( 'intval', $ids ), true );
+	}
 }

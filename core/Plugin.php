@@ -10,6 +10,7 @@ namespace ScoreFix\Core;
 use ScoreFix\Admin\ActionsController;
 use ScoreFix\Admin\DashboardPage;
 use ScoreFix\Admin\DeferredScanScheduler;
+use ScoreFix\Admin\EditorIntegration;
 use ScoreFix\Admin\ReminderScheduler;
 use ScoreFix\Fixes\FixEngine;
 use ScoreFix\Frontend\MetaDescription;
@@ -81,6 +82,9 @@ class Plugin {
 		self::$loader->add_action( 'admin_menu', $dashboard, 'register_menu', 10, 0 );
 		self::$loader->add_action( 'admin_enqueue_scripts', $dashboard, 'enqueue_assets', 10, 1 );
 		self::$loader->add_action( 'admin_init', $actions, 'handle_actions', 10, 0 );
+
+		$editor_integration = new EditorIntegration();
+		$editor_integration->register( self::$loader );
 
 		RenderScanQueue::register( self::$loader );
 		DeferredScanScheduler::register( self::$loader );
