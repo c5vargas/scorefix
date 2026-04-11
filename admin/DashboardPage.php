@@ -8,6 +8,7 @@
 namespace ScoreFix\Admin;
 
 use ScoreFix\Scanner\IssueGlossary;
+use ScoreFix\Scanner\RenderScanQueue;
 use ScoreFix\Scanner\ScanComparison;
 use ScoreFix\Scanner\Scanner;
 
@@ -17,6 +18,15 @@ defined( 'ABSPATH' ) || exit;
  * Class DashboardPage
  */
 class DashboardPage {
+
+	/**
+	 * Register AJAX handlers (must run on init — admin-ajax.php does not fire admin_menu).
+	 *
+	 * @return void
+	 */
+	public function register_ajax_handlers() {
+		add_action( 'wp_ajax_scorefix_render_scan_status', array( $this, 'ajax_render_scan_status' ) );
+	}
 
 	/**
 	 * Register top-level menu under Settings or Tools — use Settings submenu for simplicity.
@@ -31,6 +41,22 @@ class DashboardPage {
 			'scorefix',
 			array( $this, 'render_page' )
 		);
+	}
+
+	/**
+	 * AJAX: background render-queue state for dashboard polling.
+	 *
+	 * @return void
+	 */
+	public function ajax_render_scan_status() {
+		check_ajax_referer( 'scorefix_render_status', 'nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'Forbidden' ), 403 );
+		}
+		if ( RenderScanQueue::is_background_scan_running() ) {
+			RenderScanQueue::process_tick( 1 );
+		}
+		wp_send_json_success( RenderScanQueue::get_background_scan_state() );
 	}
 
 	/**
@@ -49,6 +75,24 @@ class DashboardPage {
 			SCOREFIX_PLUGIN_URL . 'assets/css/admin.css',
 			array(),
 			SCOREFIX_VERSION
+		);
+
+		wp_enqueue_script(
+			'scorefix-admin-dashboard',
+			SCOREFIX_PLUGIN_URL . 'assets/js/admin-dashboard.js',
+			array(),
+			SCOREFIX_VERSION,
+			true
+		);
+		wp_localize_script(
+			'scorefix-admin-dashboard',
+			'scorefixDashboard',
+			array(
+				'ajaxUrl'         => admin_url( 'admin-ajax.php' ),
+				'nonce'           => wp_create_nonce( 'scorefix_render_status' ),
+				'renderScan'      => RenderScanQueue::get_background_scan_state(),
+				'renderCountTpl'  => __( '%1$d of %2$d rendered URLs processed', 'scorefix' ),
+			)
 		);
 	}
 
@@ -100,6 +144,8 @@ class DashboardPage {
 		}
 
 		$scorefix_issues_view = self::build_issues_table_view( $issues );
+
+		$render_scan_state = RenderScanQueue::get_background_scan_state();
 
 		include SCOREFIX_PLUGIN_DIR . 'admin/views/dashboard.php';
 	}

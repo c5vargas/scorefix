@@ -4,7 +4,7 @@
  *
  * @package ScoreFix
  *
- * Variables: $score, $issues, $scanned, $fixes_on, $notice, $metrics, $show_metric_trend_hint, $perf_copy, $scorefix_settings, $scorefix_issues_view
+ * Variables: $score, $issues, $scanned, $fixes_on, $notice, $metrics, $show_metric_trend_hint, $perf_copy, $scorefix_settings, $scorefix_issues_view, $render_scan_state
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -26,6 +26,7 @@ defined( 'ABSPATH' ) || exit;
 
 	<div class="scorefix-dashboard-layout">
 		<div class="scorefix-dashboard-main">
+			<?php include SCOREFIX_PLUGIN_DIR . 'admin/views/partials/dashboard-render-scan-progress.php'; ?>
 			<?php include SCOREFIX_PLUGIN_DIR . 'admin/views/partials/dashboard-site-health.php'; ?>
 			<?php include SCOREFIX_PLUGIN_DIR . 'admin/views/partials/dashboard-issues.php'; ?>
 		</div>

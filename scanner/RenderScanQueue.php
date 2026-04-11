@@ -51,9 +51,10 @@ class RenderScanQueue {
 	/**
 	 * Cron / dashboard worker: drain queue in small batches.
 	 *
+	 * @param int|null $max_urls Optional. When set (e.g. 1 from dashboard AJAX poll), process at most this many URLs per call; when null, use batch filter (cron / admin load).
 	 * @return void
 	 */
-	public static function process_tick() {
+	public static function process_tick( $max_urls = null ) {
 		if ( ! self::is_allowed_runner() ) {
 			return;
 		}
@@ -70,14 +71,15 @@ class RenderScanQueue {
 			return;
 		}
 
-		$batch = (int) apply_filters(
+		$default_batch = (int) apply_filters(
 			'scorefix_render_queue_batch_size',
 			max( 1, min( 10, (int) RenderCaptureConfig::QUEUE_BATCH_SIZE ) )
 		);
+		$batch         = null !== $max_urls ? max( 1, (int) $max_urls ) : $default_batch;
 
-
-		$scanner = new Scanner();
+		$scanner    = new Scanner();
 		$new_issues = isset( $queue['issues'] ) && is_array( $queue['issues'] ) ? $queue['issues'] : array();
+		$total      = isset( $queue['total'] ) ? (int) $queue['total'] : 0;
 
 		for ( $i = 0; $i < $batch; $i++ ) {
 			if ( empty( $queue['pending'] ) ) {
@@ -86,6 +88,13 @@ class RenderScanQueue {
 			$url = array_shift( $queue['pending'] );
 			$url = esc_url_raw( (string) $url );
 			if ( '' === $url ) {
+				$queue['issues'] = $new_issues;
+				update_option( self::OPTION_QUEUE, $queue, false );
+				self::persist_progress_transient( $queue );
+				if ( empty( $queue['pending'] ) ) {
+					self::complete_queue_run( $queue, $total );
+					return;
+				}
 				continue;
 			}
 
@@ -108,40 +117,63 @@ class RenderScanQueue {
 					$new_issues = array_merge( $new_issues, $scanner->scan_html( $inner, 0, $maker ) );
 				}
 			}
-		}
 
-		$queue['issues'] = $new_issues;
-		$done            = isset( $queue['total'] ) ? (int) $queue['total'] - count( $queue['pending'] ) : 0;
-		$total           = isset( $queue['total'] ) ? (int) $queue['total'] : 0;
+			$queue['issues'] = $new_issues;
+			update_option( self::OPTION_QUEUE, $queue, false );
+			self::persist_progress_transient( $queue );
 
-		set_transient(
-			self::TRANSIENT_PROGRESS,
-			array(
-				'done'  => max( 0, $done ),
-				'total' => max( 0, $total ),
-			),
-			2 * HOUR_IN_SECONDS
-		);
-
-		if ( empty( $queue['pending'] ) ) {
-			self::finalize( $queue );
-			delete_option( self::OPTION_QUEUE );
-			delete_transient( self::TRANSIENT_FETCH );
-			self::clear_scheduled_ticks();
-			set_transient(
-				self::TRANSIENT_PROGRESS,
-				array(
-					'done'  => $total,
-					'total' => $total,
-					'idle'  => true,
-				),
-				300
-			);
-			return;
+			if ( empty( $queue['pending'] ) ) {
+				self::complete_queue_run( $queue, $total );
+				return;
+			}
 		}
 
 		update_option( self::OPTION_QUEUE, $queue, false );
 		self::schedule_next_tick();
+	}
+
+	/**
+	 * Write progress transient from current queue row (after each URL for live UI).
+	 *
+	 * @param array<string, mixed> $queue Queue row.
+	 * @return void
+	 */
+	protected static function persist_progress_transient( array $queue ) {
+		$total = isset( $queue['total'] ) ? (int) $queue['total'] : 0;
+		$pend  = isset( $queue['pending'] ) && is_array( $queue['pending'] ) ? count( $queue['pending'] ) : 0;
+		$done  = $total > 0 ? max( 0, $total - $pend ) : 0;
+		set_transient(
+			self::TRANSIENT_PROGRESS,
+			array(
+				'done'  => $done,
+				'total' => max( 0, $total ),
+			),
+			2 * HOUR_IN_SECONDS
+		);
+	}
+
+	/**
+	 * Merge render issues into snapshot, clear queue, set idle progress.
+	 *
+	 * @param array<string, mixed> $queue Queue row.
+	 * @param int                  $total Total URLs from original run.
+	 * @return void
+	 */
+	protected static function complete_queue_run( array $queue, $total ) {
+		$total = max( 0, (int) $total );
+		self::finalize( $queue );
+		delete_option( self::OPTION_QUEUE );
+		delete_transient( self::TRANSIENT_FETCH );
+		self::clear_scheduled_ticks();
+		set_transient(
+			self::TRANSIENT_PROGRESS,
+			array(
+				'done'  => $total,
+				'total' => $total,
+				'idle'  => true,
+			),
+			300
+		);
 	}
 
 	/**
@@ -227,6 +259,13 @@ class RenderScanQueue {
 		if ( wp_doing_cron() ) {
 			return true;
 		}
+		// Dashboard AJAX poll advances the queue while the admin keeps the ScoreFix screen open.
+		if ( function_exists( 'wp_doing_ajax' ) && wp_doing_ajax() ) {
+			$action = isset( $_REQUEST['action'] ) ? sanitize_key( wp_unslash( $_REQUEST['action'] ) ) : '';
+			if ( 'scorefix_render_scan_status' === $action && current_user_can( 'manage_options' ) ) {
+				return true;
+			}
+		}
 		if ( is_admin() && current_user_can( 'manage_options' ) ) {
 			// Prefer hook context: $GLOBALS['pagenow'] is not always set early on all hosts.
 			if ( function_exists( 'doing_action' ) && doing_action( 'load-settings_page_scorefix' ) ) {
@@ -296,5 +335,57 @@ class RenderScanQueue {
 	public static function get_progress() {
 		$t = get_transient( self::TRANSIENT_PROGRESS );
 		return is_array( $t ) ? $t : array();
+	}
+
+	/**
+	 * Whether the async rendered-URL queue still has work (results not final yet).
+	 *
+	 * @return bool
+	 */
+	public static function is_background_scan_running() {
+		$queue = get_option( self::OPTION_QUEUE, null );
+		return is_array( $queue )
+			&& ! empty( $queue['pending'] )
+			&& is_array( $queue['pending'] );
+	}
+
+	/**
+	 * State for dashboard UI + polling (running flag, counts, percent).
+	 *
+	 * @return array{running: bool, done: int, total: int, pct: int}
+	 */
+	public static function get_background_scan_state() {
+		$running = self::is_background_scan_running();
+		$done    = 0;
+		$total   = 0;
+
+		$prog = get_transient( self::TRANSIENT_PROGRESS );
+		if ( $running && is_array( $prog ) && empty( $prog['idle'] ) ) {
+			$done  = isset( $prog['done'] ) ? (int) $prog['done'] : 0;
+			$total = isset( $prog['total'] ) ? (int) $prog['total'] : 0;
+		}
+
+		if ( $running && $total < 1 ) {
+			$queue = get_option( self::OPTION_QUEUE, null );
+			if ( is_array( $queue ) ) {
+				$total = isset( $queue['total'] ) ? (int) $queue['total'] : 0;
+				if ( $total < 1 && ! empty( $queue['pending'] ) && is_array( $queue['pending'] ) ) {
+					$total = count( $queue['pending'] );
+				}
+				$pending_n = isset( $queue['pending'] ) && is_array( $queue['pending'] ) ? count( $queue['pending'] ) : 0;
+				$done        = max( 0, $total - $pending_n );
+			}
+		}
+
+		$pct = ( $total > 0 )
+			? (int) min( 100, max( 0, (int) round( ( $done / (float) $total ) * 100 ) ) )
+			: 0;
+
+		return array(
+			'running' => $running,
+			'done'    => max( 0, $done ),
+			'total'   => max( 0, $total ),
+			'pct'     => $pct,
+		);
 	}
 }
