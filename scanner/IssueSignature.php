@@ -99,6 +99,13 @@ class IssueSignature {
 			case 'table_missing_caption':
 				$discriminator = isset( $issue['table_ordinal'] ) ? (string) (int) $issue['table_ordinal'] : '';
 				break;
+			case 'perf_img_missing_dimensions':
+			case 'perf_img_missing_lazy':
+				$discriminator = isset( $issue['src'] ) ? substr( (string) $issue['src'], 0, 160 ) : '';
+				break;
+			case 'perf_many_external_scripts':
+				$discriminator = isset( $issue['script_src_count'] ) ? (string) (int) $issue['script_src_count'] : '';
+				break;
 			default:
 				$discriminator = '';
 				break;

@@ -14,7 +14,7 @@ Then open **Settings → ScoreFix**.
 |------|------|
 | `scorefix.php` | Bootstrap, constants, autoload |
 | `core/` | `Plugin`, `Loader`, `Autoload` |
-| `scanner/` | `Scanner`, `UrlHtmlCapture`, `CaptureRequest`, `RenderUrlDefaults`, `RenderUrlCollector`, `RenderScanQueue`, `RenderCaptureConfig` — scan + scoring + background same-host HTML pass |
+| `scanner/` | `Scanner`, rules (`PerformanceHeuristicRule`, …), `UrlHtmlCapture`, `RenderUrlCollector`, `RenderScanQueue`, `RenderCaptureConfig` — scan + scoring + background same-host HTML pass |
 | `fixes/` | `FixEngine` — runtime HTML fixes |
 | `frontend/` | `RenderHooks` — `the_content`, attachments |
 | `admin/` | Dashboard + POST actions |

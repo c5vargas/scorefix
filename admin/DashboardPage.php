@@ -451,6 +451,9 @@ class DashboardPage {
 		if ( 'media_library' === $ctx ) {
 			return __( 'Media library', 'scorefix' );
 		}
+		if ( 'performance' === $ctx ) {
+			return __( 'Performance (HTML heuristic)', 'scorefix' );
+		}
 		return $ctx;
 	}
 
@@ -632,6 +635,22 @@ class DashboardPage {
 				'label' => __( 'Scanned URL', 'scorefix' ),
 				'value' => (string) $issue['capture_url'],
 			);
+		}
+		if ( 'perf_many_external_scripts' === $itype ) {
+			if ( isset( $issue['script_src_count'] ) ) {
+				$rows[] = array(
+					'key'   => 'script_src_count',
+					'label' => __( 'External script tags', 'scorefix' ),
+					'value' => (string) (int) $issue['script_src_count'],
+				);
+			}
+			if ( isset( $issue['script_src_threshold'] ) ) {
+				$rows[] = array(
+					'key'   => 'script_src_threshold',
+					'label' => __( 'Threshold used', 'scorefix' ),
+					'value' => (string) (int) $issue['script_src_threshold'],
+				);
+			}
 		}
 
 		return $rows;

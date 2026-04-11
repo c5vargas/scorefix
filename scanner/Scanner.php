@@ -18,6 +18,7 @@ use ScoreFix\Scanner\Rules\ImagesRule;
 use ScoreFix\Scanner\Rules\LandmarksRule;
 use ScoreFix\Scanner\Rules\LinkGenericTextRule;
 use ScoreFix\Scanner\Rules\LinksRule;
+use ScoreFix\Scanner\Rules\PerformanceHeuristicRule;
 use ScoreFix\Scanner\Rules\TablesSemanticRule;
 
 defined( 'ABSPATH' ) || exit;
@@ -53,6 +54,10 @@ class Scanner {
 		'iframe_missing_title'           => 3,
 		'table_missing_th'               => 2,
 		'table_missing_caption'          => 1,
+		// Phase 5A — local performance heuristics (conservative weights).
+		'perf_img_missing_dimensions'     => 1,
+		'perf_img_missing_lazy'          => 1,
+		'perf_many_external_scripts'     => 2,
 	);
 
 	/**
@@ -243,6 +248,7 @@ class Scanner {
 		$issues = array_merge( $issues, ContrastInlineRule::collect( $xpath, $pid, $maker ) );
 		$issues = array_merge( $issues, EmbeddedMediaRule::collect( $xpath, $pid, $maker ) );
 		$issues = array_merge( $issues, TablesSemanticRule::collect( $xpath, $pid, $maker ) );
+		$issues = array_merge( $issues, PerformanceHeuristicRule::collect( $xpath, $pid, $maker ) );
 
 		return $issues;
 	}

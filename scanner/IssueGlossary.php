@@ -214,6 +214,33 @@ class IssueGlossary {
 			),
 		);
 
+		$d['perf_img_missing_dimensions'] = array(
+			'title'    => __( 'Image without width and height', 'scorefix' ),
+			'business' => __( 'Explicit dimensions help the browser reserve space so the page does not jump while images load (better perceived speed and Core Web Vitals layout stability). This check only looks at the HTML we scanned — not network weight.', 'scorefix' ),
+			'references' => array(
+				__( 'Lighthouse (orientative): Performance — Properly size images / CLS-related audits', 'scorefix' ),
+				__( 'web.dev: Optimize Cumulative Layout Shift', 'scorefix' ),
+			),
+		);
+
+		$d['perf_img_missing_lazy'] = array(
+			'title'    => __( 'Image may benefit from lazy loading', 'scorefix' ),
+			'business' => __( 'Deferring off-screen images can speed up first paint. ScoreFix uses a simple rule (for example: not the first image, and usually after the first main content block). Your theme or page builder may already optimize this on the live site.', 'scorefix' ),
+			'references' => array(
+				__( 'Lighthouse (orientative): Performance — Offscreen images', 'scorefix' ),
+				__( 'MDN: loading attribute', 'scorefix' ),
+			),
+		);
+
+		$d['perf_many_external_scripts'] = array(
+			'title'    => __( 'Many external scripts in this HTML', 'scorefix' ),
+			'business' => __( 'A large number of separate script files often means more network work and slower interactivity. This is a rough count from the HTML snapshot only.', 'scorefix' ),
+			'references' => array(
+				__( 'Lighthouse (orientative): Performance — Bootup time / JavaScript execution', 'scorefix' ),
+				__( 'web.dev: Reduce JavaScript payloads', 'scorefix' ),
+			),
+		);
+
 		return $d;
 	}
 
