@@ -21,6 +21,7 @@ use ScoreFix\Scanner\Rules\LinksRule;
 use ScoreFix\Scanner\Rules\PerformanceHeuristicRule;
 use ScoreFix\Scanner\Rules\SeoFragmentRule;
 use ScoreFix\Scanner\Rules\TablesSemanticRule;
+use ScoreFix\Scanner\ScanComparison;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -75,9 +76,19 @@ class Scanner {
 	);
 
 	/**
-	 * Max total penalty before score hits 0.
+	 * Max total penalty before score hits 0 (per-bucket and legacy linear).
 	 */
 	const PENALTY_CAP = 100;
+
+	/**
+	 * Cumulative weighted penalty scale for the global volume component (higher = more issues needed to tank score).
+	 */
+	const SCORE_VOLUME_SCALE = 235;
+
+	/**
+	 * Weight of per-bucket average in final score; remainder comes from global volume (0–1).
+	 */
+	const SCORE_BUCKET_BLEND_WEIGHT = 0.36;
 
 	/**
 	 * Run full scan and persist snapshot.
@@ -152,7 +163,7 @@ class Scanner {
 			'posts_scanned'          => $posts_scanned,
 			'scanned_post_ids'       => $scanned_post_ids,
 			'scanned_attachment_ids' => $scanned_attachment_ids,
-			'score_model'            => 'per_page_average_v2',
+			'score_model'            => 'per_page_average_v3_blend',
 			'comparison'             => ScanComparison::build( $had_prior, $prev_for_compare, $issues ),
 		);
 
@@ -328,7 +339,9 @@ class Scanner {
 	 * each published post scanned = one bucket (0–100 from its non-attachment, non-rendered issues),
 	 * the **whole media-library pass** = one bucket (sum of all attachment-source penalties, capped),
 	 * each distinct rendered URL = one bucket.
-	 * Final score = round( average of those subscores ). Legacy snapshots omit context → linear sum model.
+	 * Final score blends: (1) round( average of bucket subscores ) and (2) a global component from cumulative
+	 * weighted penalties across all issue rows (so large issue counts cannot hide behind “mostly clean pages”).
+	 * Legacy snapshots omit context → linear sum model.
 	 *
 	 * @param array<int, array<string, mixed>>       $issues  Issues.
 	 * @param array<string, mixed>                   $context Optional. Keys: `scanned_post_ids` int[], `scanned_attachment_ids` int[].
@@ -411,7 +424,20 @@ class Scanner {
 			return (int) apply_filters( 'scorefix_calculated_score', $linear, $issues, $context );
 		}
 
-		$score = (int) max( 0, min( 100, (int) round( $sum / $cnt ) ) );
+		$bucket_score = (int) max( 0, min( 100, (int) round( $sum / $cnt ) ) );
+		$volume_total = $this->sum_weighted_penalties( $issues );
+		$scale        = (float) apply_filters( 'scorefix_score_volume_scale', self::SCORE_VOLUME_SCALE, $issues, $context );
+		$scale        = $scale > 0 ? $scale : (float) self::SCORE_VOLUME_SCALE;
+		$vol_score    = $this->volume_score_from_total( $volume_total, $scale );
+		$blend_w      = (float) apply_filters( 'scorefix_score_bucket_blend_weight', self::SCORE_BUCKET_BLEND_WEIGHT, $issues, $context );
+		$blend_w      = max( 0.0, min( 1.0, $blend_w ) );
+		$score        = (int) max(
+			0,
+			min(
+				100,
+				(int) round( $blend_w * $bucket_score + ( 1.0 - $blend_w ) * $vol_score )
+			)
+		);
 		return (int) apply_filters( 'scorefix_calculated_score', $score, $issues, $context );
 	}
 
@@ -440,6 +466,54 @@ class Scanner {
 	protected function penalty_for_issue( array $issue ) {
 		$type = isset( $issue['type'] ) ? (string) $issue['type'] : '';
 		return isset( self::PENALTY[ $type ] ) ? (int) self::PENALTY[ $type ] : 2;
+	}
+
+	/**
+	 * Per-issue penalty adjusted by UI severity (high-impact errors pull the global score down more).
+	 *
+	 * @param array<string, mixed> $issue Issue row.
+	 * @return int
+	 */
+	protected function weighted_penalty_for_issue( array $issue ) {
+		$base = $this->penalty_for_issue( $issue );
+		$s    = isset( $issue['severity'] ) ? (string) $issue['severity'] : '';
+		if ( ScanComparison::SEVERITY_ERROR === $s ) {
+			return (int) max( 1, (int) round( $base * 1.38 ) );
+		}
+		if ( 'low' === $s ) {
+			return (int) max( 1, (int) round( $base * 0.88 ) );
+		}
+		return $base;
+	}
+
+	/**
+	 * Sum of weighted penalties for every issue row (matches dashboard issue list cardinality).
+	 *
+	 * @param array<int, array<string, mixed>> $issues Issues.
+	 * @return int
+	 */
+	protected function sum_weighted_penalties( array $issues ) {
+		$t = 0;
+		foreach ( $issues as $issue ) {
+			if ( ! is_array( $issue ) ) {
+				continue;
+			}
+			$t += $this->weighted_penalty_for_issue( $issue );
+		}
+		return $t;
+	}
+
+	/**
+	 * Map cumulative weighted penalty to a 0–100 subscore (100 = no volume penalty).
+	 *
+	 * @param int   $total_weighted Sum of weighted penalties.
+	 * @param float $scale          Divisor (see SCORE_VOLUME_SCALE).
+	 * @return float
+	 */
+	protected function volume_score_from_total( $total_weighted, $scale ) {
+		$total_weighted = max( 0, (int) $total_weighted );
+		$raw            = ( $total_weighted / $scale ) * 100.0;
+		return max( 0.0, min( 100.0, 100.0 - min( 100.0, $raw ) ) );
 	}
 
 	/**
