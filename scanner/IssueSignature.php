@@ -112,6 +112,12 @@ class IssueSignature {
 			case 'seo_few_internal_links':
 				$discriminator = 'internal-links';
 				break;
+			case 'seo_jsonld_invalid_json':
+				$discriminator = isset( $issue['ld_json_block_index'] ) ? (string) (int) $issue['ld_json_block_index'] : '';
+				break;
+			case 'seo_jsonld_missing_expected_type':
+				$discriminator = isset( $issue['expected_schema'] ) ? (string) $issue['expected_schema'] : '';
+				break;
 			default:
 				$discriminator = '';
 				break;

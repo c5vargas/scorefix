@@ -1167,9 +1167,17 @@
 	gap: 10px 14px;
 }
 
-.scorefix-issue-heading .scorefix-issue-badge {
+.scorefix-issue-badges {
+	display: inline-flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px 8px;
 	flex-shrink: 0;
 	margin-top: 2px;
+}
+
+.scorefix-issue-heading .scorefix-issue-badge {
+	flex-shrink: 0;
 }
 
 .scorefix-issue-heading .scorefix-issue-title {
@@ -1469,6 +1477,19 @@
 .scorefix-issue-badge--warning {
 	background: var(--scorefix-warning-icon-bg);
 	color: var(--scorefix-warning-icon-fg);
+}
+
+/* Subtle category badge (SEO / Performance / Accessibility) next to severity */
+.scorefix-issue-badge--family {
+	background: #f1f5f9;
+	color: #64748b;
+	border: 1px solid #e2e8f0;
+	font-weight: 600;
+	font-size: 10px;
+}
+
+.scorefix-issue-badge--family .dashicons {
+	display: none;
 }
 
 .scorefix-issue-loc-title {

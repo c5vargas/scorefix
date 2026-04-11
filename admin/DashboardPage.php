@@ -458,6 +458,121 @@ class DashboardPage {
 	}
 
 	/**
+	 * Primary line for the “Where” column: captured URL for rendered pass, post/media title for stored content.
+	 *
+	 * @param array<string, mixed> $issue Issue row.
+	 * @return string
+	 */
+	public static function issue_where_primary_label( array $issue ) {
+		$url = isset( $issue['capture_url'] ) ? esc_url_raw( (string) $issue['capture_url'] ) : '';
+		if ( '' !== $url ) {
+			$max = (int) apply_filters( 'scorefix_issue_where_url_max_length', 72, $issue );
+			$max = max( 20, min( 200, $max ) );
+			if ( strlen( $url ) > $max ) {
+				return substr( $url, 0, $max - 3 ) . '...';
+			}
+			return $url;
+		}
+		$pid = isset( $issue['post_id'] ) ? (int) $issue['post_id'] : 0;
+		if ( $pid > 0 ) {
+			$t = get_the_title( $pid );
+			if ( is_string( $t ) && '' !== $t ) {
+				return $t;
+			}
+		}
+		return __( '(No title)', 'scorefix' );
+	}
+
+	/**
+	 * Whether to show the post/media ID under the primary “Where” line (not for rendered URL rows).
+	 *
+	 * @param array<string, mixed> $issue Issue row.
+	 * @return bool
+	 */
+	public static function issue_where_show_post_id( array $issue ) {
+		if ( ! empty( $issue['capture_url'] ) ) {
+			return false;
+		}
+		$pid = isset( $issue['post_id'] ) ? (int) $issue['post_id'] : 0;
+		return $pid > 0;
+	}
+
+	/**
+	 * Issue family slug for UI (SEO, performance, accessibility).
+	 *
+	 * @param array<string, mixed> $issue Issue row.
+	 * @return string seo|performance|accessibility|other
+	 */
+	public static function issue_family_slug( array $issue ) {
+		$resolved = self::resolve_issue_family_slug( $issue );
+		return (string) apply_filters( 'scorefix_issue_family_slug', $resolved, $issue );
+	}
+
+	/**
+	 * Localized short label for the family badge.
+	 *
+	 * @param array<string, mixed> $issue Issue row.
+	 * @return string
+	 */
+	public static function issue_family_label( array $issue ) {
+		return self::issue_family_label_for_slug( self::issue_family_slug( $issue ), $issue );
+	}
+
+	/**
+	 * Slug + label for the issues table (single resolution of filters).
+	 *
+	 * @param array<string, mixed> $issue Issue row.
+	 * @return array{slug: string, label: string}
+	 */
+	public static function issue_family_display( array $issue ) {
+		$slug = self::issue_family_slug( $issue );
+		return array(
+			'slug'  => $slug,
+			'label' => self::issue_family_label_for_slug( $slug, $issue ),
+		);
+	}
+
+	/**
+	 * @param string               $slug  Family slug.
+	 * @param array<string, mixed> $issue Issue row (for filters).
+	 * @return string
+	 */
+	protected static function issue_family_label_for_slug( $slug, array $issue = array() ) {
+		$slug = sanitize_key( (string) $slug );
+		$labels = array(
+			'seo'           => __( 'SEO', 'scorefix' ),
+			'performance'   => __( 'Performance', 'scorefix' ),
+			'accessibility' => __( 'Accessibility', 'scorefix' ),
+			'other'         => __( 'Other', 'scorefix' ),
+		);
+		if ( isset( $labels[ $slug ] ) ) {
+			return $labels[ $slug ];
+		}
+		return (string) apply_filters( 'scorefix_issue_family_label', $labels['other'], $slug, $issue );
+	}
+
+	/**
+	 * @param array<string, mixed> $issue Issue row.
+	 * @return string
+	 */
+	protected static function resolve_issue_family_slug( array $issue ) {
+		$type = isset( $issue['type'] ) ? sanitize_key( (string) $issue['type'] ) : '';
+		if ( '' === $type ) {
+			return 'other';
+		}
+		if ( 'link_generic_text' === $type ) {
+			return 'seo';
+		}
+		if ( 0 === strpos( $type, 'seo_' ) ) {
+			return 'seo';
+		}
+		if ( 0 === strpos( $type, 'perf_' ) ) {
+			return 'performance';
+		}
+		return 'accessibility';
+	}
+
+	/**
 	 * Technical preview lines for the issue (scanner fields only).
 	 *
 	 * @param array<string, mixed> $issue Issue row.
@@ -610,6 +725,68 @@ class DashboardPage {
 					'key'   => 'external_link_count',
 					'label' => __( 'External links (other hosts)', 'scorefix' ),
 					'value' => (string) (int) $issue['external_link_count'],
+				);
+			}
+		}
+		if ( 'seo_head_title_length' === $itype ) {
+			if ( isset( $issue['title_length'] ) ) {
+				$rows[] = array(
+					'key'   => 'title_length',
+					'label' => __( 'Title length (characters)', 'scorefix' ),
+					'value' => (string) (int) $issue['title_length'],
+				);
+			}
+			if ( isset( $issue['title_min'] ) ) {
+				$rows[] = array(
+					'key'   => 'title_min',
+					'label' => __( 'Expected minimum', 'scorefix' ),
+					'value' => (string) (int) $issue['title_min'],
+				);
+			}
+			if ( isset( $issue['title_max'] ) ) {
+				$rows[] = array(
+					'key'   => 'title_max',
+					'label' => __( 'Expected maximum', 'scorefix' ),
+					'value' => (string) (int) $issue['title_max'],
+				);
+			}
+		}
+		if ( 'seo_head_robots_noindex' === $itype && ! empty( $issue['robots_content'] ) ) {
+			$rows[] = array(
+				'key'   => 'robots_content',
+				'label' => __( 'Robots meta content', 'scorefix' ),
+				'value' => (string) $issue['robots_content'],
+			);
+		}
+		if ( 'seo_jsonld_invalid_json' === $itype ) {
+			if ( isset( $issue['ld_json_block_index'] ) ) {
+				$rows[] = array(
+					'key'   => 'ld_json_block_index',
+					'label' => __( 'JSON-LD block index (page order)', 'scorefix' ),
+					'value' => (string) (int) $issue['ld_json_block_index'],
+				);
+			}
+			if ( ! empty( $issue['json_error'] ) ) {
+				$rows[] = array(
+					'key'   => 'json_error',
+					'label' => __( 'JSON error', 'scorefix' ),
+					'value' => (string) $issue['json_error'],
+				);
+			}
+		}
+		if ( 'seo_jsonld_missing_expected_type' === $itype ) {
+			if ( ! empty( $issue['expected_schema'] ) ) {
+				$rows[] = array(
+					'key'   => 'expected_schema',
+					'label' => __( 'Expected schema.org type', 'scorefix' ),
+					'value' => (string) $issue['expected_schema'],
+				);
+			}
+			if ( ! empty( $issue['expect_reason'] ) ) {
+				$rows[] = array(
+					'key'   => 'expect_reason',
+					'label' => __( 'Expectation context', 'scorefix' ),
+					'value' => (string) $issue['expect_reason'],
 				);
 			}
 		}

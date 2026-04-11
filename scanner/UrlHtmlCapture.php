@@ -100,6 +100,13 @@ class UrlHtmlCapture {
 		}
 
 		$response = wp_remote_get( $fetch_url, $args );
+		if ( is_wp_error( $response ) && apply_filters( 'scorefix_render_capture_retry_without_sslverify', true, $normalized, $response ) ) {
+			$msg = $response->get_error_message();
+			if ( false !== stripos( $msg, 'SSL' ) || false !== stripos( $msg, 'certificate' ) || false !== stripos( $msg, 'cURL error 60' ) ) {
+				$args['sslverify'] = false;
+				$response          = wp_remote_get( $fetch_url, $args );
+			}
+		}
 		if ( is_wp_error( $response ) ) {
 			return $response;
 		}
@@ -188,6 +195,45 @@ class UrlHtmlCapture {
 
 		$out = '';
 		foreach ( $body->childNodes as $child ) {
+			$out .= $dom->saveHTML( $child );
+		}
+
+		return $out;
+	}
+
+	/**
+	 * Extract inner HTML of first `<head>` for head-level SEO rules (same parsing strategy as body).
+	 *
+	 * @param string $html Full or partial document.
+	 * @return string Inner HTML of head children, or empty string if no head.
+	 */
+	public static function extract_head_inner_html( $html ) {
+		$html = (string) $html;
+		if ( '' === trim( $html ) ) {
+			return '';
+		}
+
+		libxml_use_internal_errors( true );
+		$dom    = new \DOMDocument();
+		$loaded = $dom->loadHTML( '<?xml encoding="utf-8"?>' . $html, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD );
+		libxml_clear_errors();
+
+		if ( ! $loaded ) {
+			return '';
+		}
+
+		$heads = $dom->getElementsByTagName( 'head' );
+		if ( 0 === $heads->length ) {
+			return '';
+		}
+
+		$head = $heads->item( 0 );
+		if ( ! $head instanceof \DOMElement ) {
+			return '';
+		}
+
+		$out = '';
+		foreach ( $head->childNodes as $child ) {
 			$out .= $dom->saveHTML( $child );
 		}
 

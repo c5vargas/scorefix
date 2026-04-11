@@ -106,17 +106,10 @@ $scorefix_iv_pages    = isset( $scorefix_iv['pagination_html'] ) ? (string) $sco
 							$scorefix_tone       = DashboardPage::issue_severity_tone( $scorefix_issue );
 							$scorefix_sev_label  = DashboardPage::issue_severity_label( $scorefix_issue );
 							$scorefix_post_id    = isset( $scorefix_issue['post_id'] ) ? (int) $scorefix_issue['post_id'] : 0;
-							$scorefix_cap_url    = isset( $scorefix_issue['capture_url'] ) ? esc_url_raw( (string) $scorefix_issue['capture_url'] ) : '';
-							$scorefix_post_title = '';
-							if ( '' !== $scorefix_cap_url ) {
-								$scorefix_post_title = strlen( $scorefix_cap_url ) > 72 ? substr( $scorefix_cap_url, 0, 69 ) . '...' : $scorefix_cap_url;
-							} elseif ( $scorefix_post_id ) {
-								$scorefix_post_title = get_the_title( $scorefix_post_id );
-							}
-							if ( '' === $scorefix_post_title ) {
-								$scorefix_post_title = __( '(No title)', 'scorefix' );
-							}
-							$scorefix_ctx_label = DashboardPage::issue_context_label( $scorefix_issue );
+							$scorefix_post_title = DashboardPage::issue_where_primary_label( $scorefix_issue );
+							$scorefix_show_id      = DashboardPage::issue_where_show_post_id( $scorefix_issue );
+							$scorefix_family_disp  = DashboardPage::issue_family_display( $scorefix_issue );
+							$scorefix_ctx_label    = DashboardPage::issue_context_label( $scorefix_issue );
 							$scorefix_preview   = DashboardPage::issue_preview_fields( $scorefix_issue );
 							$scorefix_actions   = DashboardPage::issue_row_actions( $scorefix_issue );
 							$scorefix_has_preview = ! empty( $scorefix_preview );
@@ -132,20 +125,25 @@ $scorefix_iv_pages    = isset( $scorefix_iv['pagination_html'] ) ? (string) $sco
 								<td class="column-issue">
 									<div class="scorefix-issue-heading">
 										<strong class="scorefix-issue-title"><?php echo esc_html( $scorefix_issue_title ); ?></strong>
-										<span class="scorefix-issue-badge scorefix-issue-badge--<?php echo esc_attr( $scorefix_tone ); ?>">
-											<?php if ( 'error' === $scorefix_tone ) : ?>
-												<span class="dashicons dashicons-dismiss" aria-hidden="true"></span>
-											<?php else : ?>
-												<span class="dashicons dashicons-warning" aria-hidden="true"></span>
-											<?php endif; ?>
-											<span class="scorefix-issue-badge__text"><?php echo esc_html( $scorefix_sev_label ); ?></span>
-										</span>
+										<div class="scorefix-issue-badges" role="group" aria-label="<?php esc_attr_e( 'Severity and category', 'scorefix' ); ?>">
+											<span class="scorefix-issue-badge scorefix-issue-badge--<?php echo esc_attr( $scorefix_tone ); ?>">
+												<?php if ( 'error' === $scorefix_tone ) : ?>
+													<span class="dashicons dashicons-dismiss" aria-hidden="true"></span>
+												<?php else : ?>
+													<span class="dashicons dashicons-warning" aria-hidden="true"></span>
+												<?php endif; ?>
+												<span class="scorefix-issue-badge__text"><?php echo esc_html( $scorefix_sev_label ); ?></span>
+											</span>
+											<span class="scorefix-issue-badge scorefix-issue-badge--family scorefix-issue-badge--family-<?php echo esc_attr( sanitize_key( $scorefix_family_disp['slug'] ) ); ?>">
+												<span class="scorefix-issue-badge__text"><?php echo esc_html( $scorefix_family_disp['label'] ); ?></span>
+											</span>
+										</div>
 									</div>
 								</td>
 								<td class="column-why"><?php echo esc_html( $scorefix_issue_desc ); ?></td>
 								<td class="column-where">
 									<span class="scorefix-issue-loc-title"><?php echo esc_html( $scorefix_post_title ); ?></span>
-									<?php if ( $scorefix_post_id > 0 ) : ?>
+									<?php if ( $scorefix_show_id ) : ?>
 										<br /><span class="scorefix-muted scorefix-issue-loc-id">
 										<?php
 										printf(

@@ -257,6 +257,73 @@ class IssueGlossary {
 			),
 		);
 
+		$d['seo_head_title_missing'] = array(
+			'title'    => __( 'Missing or empty document title (HTML title element)', 'scorefix' ),
+			'business' => __( 'The HTML snapshot from your public URL has no usable title. Titles help people and search engines understand the page. If a SEO plugin injects the title only at runtime in a way this capture cannot see, you can ignore this or adjust the theme.', 'scorefix' ),
+			'references' => array(
+				__( 'Lighthouse (orientative): SEO — document-title', 'scorefix' ),
+				__( 'Google Search Central: Influencing title links', 'scorefix' ),
+			),
+		);
+
+		$d['seo_head_title_length'] = array(
+			'title'    => __( 'Document title length looks unusual', 'scorefix' ),
+			'business' => __( 'Very short or very long titles can look odd in search results. This check uses simple character limits on the HTML we captured; tune thresholds with the scorefix_head_seo_title_min_chars / scorefix_head_seo_title_max_chars filters if needed.', 'scorefix' ),
+			'references' => array(
+				__( 'Lighthouse (orientative): SEO — document-title', 'scorefix' ),
+			),
+		);
+
+		$d['seo_head_meta_description_missing'] = array(
+			'title'    => __( 'No meta description in captured HTML', 'scorefix' ),
+			'business' => __( 'A concise meta description can improve how your snippet looks in results. This checks for meta name="description" or property="og:description" in the HTML we fetched. Plugins that output description only via JavaScript may not appear here.', 'scorefix' ),
+			'references' => array(
+				__( 'Lighthouse (orientative): SEO — meta-description', 'scorefix' ),
+			),
+		);
+
+		$d['seo_head_canonical_missing'] = array(
+			'title'    => __( 'No canonical link in captured HTML', 'scorefix' ),
+			'business' => __( 'A canonical URL tells search engines which URL is preferred when duplicates exist. Some setups omit it on purpose; disable this check with the scorefix_head_seo_require_canonical filter if your stack handles canonicals elsewhere.', 'scorefix' ),
+			'references' => array(
+				__( 'Lighthouse (orientative): SEO — canonical', 'scorefix' ),
+				__( 'Google Search Central: Consolidate duplicate URLs', 'scorefix' ),
+			),
+		);
+
+		$d['seo_head_viewport_missing'] = array(
+			'title'    => __( 'No viewport meta tag in captured HTML', 'scorefix' ),
+			'business' => __( 'Without a viewport meta tag, mobile browsers may render the page at desktop width. This is a common technical SEO and usability issue on the HTML we captured.', 'scorefix' ),
+			'references' => array(
+				__( 'Lighthouse (orientative): SEO — viewport', 'scorefix' ),
+			),
+		);
+
+		$d['seo_head_robots_noindex'] = array(
+			'title'    => __( 'Robots meta includes noindex (informational)', 'scorefix' ),
+			'business' => __( 'The captured HTML has a robots meta tag that includes noindex, which usually discourages indexing. This issue is off by default; enable it with the scorefix_head_seo_report_noindex_in_html filter when you want to audit it.', 'scorefix' ),
+			'references' => array(
+				__( 'Google Search Central: Robots meta tag', 'scorefix' ),
+			),
+		);
+
+		$d['seo_jsonld_invalid_json'] = array(
+			'title'    => __( 'Invalid or empty JSON-LD block', 'scorefix' ),
+			'business' => __( 'A script with type application/ld+json did not contain valid JSON. Search engines may ignore that block, which can break rich results tied to it. Fix the syntax in the theme, plugin, or template that outputs the block.', 'scorefix' ),
+			'references' => array(
+				__( 'Google Search Central: Introduction to structured data', 'scorefix' ),
+				__( 'Schema.org: JSON-LD', 'scorefix' ),
+			),
+		);
+
+		$d['seo_jsonld_missing_expected_type'] = array(
+			'title'    => __( 'Expected schema.org type not found in JSON-LD', 'scorefix' ),
+			'business' => __( 'Based on this URL (home, inner page, or WooCommerce product), a common structured data type was not detected in the captured HTML. On the home URL, Organization or WebSite (and similar site-level types) count as identity. This is a soft check: plugins may inject schema only after this snapshot runs. Tune expectations with scorefix_jsonld_expect_* and scorefix_jsonld_expected_types.', 'scorefix' ),
+			'references' => array(
+				__( 'Google Search Central: Understand how structured data works', 'scorefix' ),
+			),
+		);
+
 		return $d;
 	}
 

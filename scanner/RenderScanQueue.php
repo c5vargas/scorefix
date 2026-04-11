@@ -7,6 +7,9 @@
 
 namespace ScoreFix\Scanner;
 
+use ScoreFix\Scanner\Rules\HeadSeoRule;
+use ScoreFix\Scanner\Rules\JsonLdSeoRule;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -88,17 +91,20 @@ class RenderScanQueue {
 
 			$html = UrlHtmlCapture::fetch( $url, $token );
 			if ( ! is_wp_error( $html ) ) {
-				$inner = UrlHtmlCapture::extract_body_inner_html( (string) $html );
+				$html_str = (string) $html;
+				$maker    = function ( $t, $s, $e ) use ( $scanner, $url ) {
+					$e['post_id']     = 0;
+					$e['source']      = 'rendered_url';
+					$e['capture_url'] = $url;
+					if ( ! isset( $e['context'] ) || '' === (string) $e['context'] ) {
+						$e['context'] = 'rendered';
+					}
+					return $scanner->create_issue( $t, $s, $e );
+				};
+				$new_issues = array_merge( $new_issues, HeadSeoRule::collect( $html_str, $maker, $url ) );
+				$new_issues = array_merge( $new_issues, JsonLdSeoRule::collect( $html_str, $maker, $url ) );
+				$inner      = UrlHtmlCapture::extract_body_inner_html( $html_str );
 				if ( '' !== trim( $inner ) ) {
-					$maker = function ( $t, $s, $e ) use ( $scanner, $url ) {
-						$e['post_id']     = 0;
-						$e['source']      = 'rendered_url';
-						$e['capture_url'] = $url;
-						if ( ! isset( $e['context'] ) || '' === (string) $e['context'] ) {
-							$e['context'] = 'rendered';
-						}
-						return $scanner->create_issue( $t, $s, $e );
-					};
 					$new_issues = array_merge( $new_issues, $scanner->scan_html( $inner, 0, $maker ) );
 				}
 			}
@@ -222,8 +228,12 @@ class RenderScanQueue {
 			return true;
 		}
 		if ( is_admin() && current_user_can( 'manage_options' ) ) {
+			// Prefer hook context: $GLOBALS['pagenow'] is not always set early on all hosts.
+			if ( function_exists( 'doing_action' ) && doing_action( 'load-settings_page_scorefix' ) ) {
+				return true;
+			}
 			$hook = isset( $GLOBALS['pagenow'] ) ? (string) $GLOBALS['pagenow'] : '';
-			if ( 'options-general.php' === $hook ) {
+			if ( 'options-general.php' === $hook || 'settings.php' === $hook ) {
 				return true;
 			}
 		}

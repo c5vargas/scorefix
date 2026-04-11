@@ -62,6 +62,16 @@ class Scanner {
 		// Phase 2 SEO fragment heuristics (conservative).
 		'seo_thin_content'               => 1,
 		'seo_few_internal_links'         => 1,
+		// Phase 3 — head audits on rendered HTML (conservative).
+		'seo_head_title_missing'         => 2,
+		'seo_head_title_length'          => 1,
+		'seo_head_meta_description_missing' => 1,
+		'seo_head_canonical_missing'     => 1,
+		'seo_head_viewport_missing'      => 2,
+		'seo_head_robots_noindex'        => 1,
+		// Phase 4 — JSON-LD diagnostics (conservative).
+		'seo_jsonld_invalid_json'             => 1,
+		'seo_jsonld_missing_expected_type'    => 1,
 	);
 
 	/**
