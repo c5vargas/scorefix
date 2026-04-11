@@ -7,6 +7,7 @@
 
 namespace ScoreFix\Admin;
 
+use ScoreFix\Scanner\IssueGlossary;
 use ScoreFix\Scanner\ScanComparison;
 use ScoreFix\Scanner\Scanner;
 
@@ -208,10 +209,8 @@ class DashboardPage {
 			case 'contrast_risk':
 				return self::describe_contrast_issue( $issue );
 			default:
-				return array(
-					__( 'Accessibility improvement', 'scorefix' ),
-					__( 'Addressing this helps your Lighthouse accessibility score and user experience.', 'scorefix' ),
-				);
+				$g = IssueGlossary::get_entry( $type );
+				return array( $g['title'], $g['business'] );
 		}
 	}
 
@@ -435,6 +434,10 @@ class DashboardPage {
 	 * @return string
 	 */
 	public static function issue_context_label( array $issue ) {
+		$src = isset( $issue['source'] ) ? sanitize_key( (string) $issue['source'] ) : '';
+		if ( 'attachment' === $src ) {
+			return __( 'Media library', 'scorefix' );
+		}
 		$ctx = isset( $issue['context'] ) ? sanitize_text_field( (string) $issue['context'] ) : '';
 		if ( '' === $ctx ) {
 			return __( 'Post / page content', 'scorefix' );
@@ -458,6 +461,13 @@ class DashboardPage {
 		$rows  = array();
 		$itype = isset( $issue['type'] ) ? (string) $issue['type'] : '';
 
+		if ( ! empty( $issue['source'] ) ) {
+			$rows[] = array(
+				'key'   => 'source',
+				'label' => __( 'Scan source', 'scorefix' ),
+				'value' => sanitize_key( (string) $issue['source'] ),
+			);
+		}
 		if ( ! empty( $issue['src'] ) ) {
 			$rows[] = array(
 				'key'   => 'src',
@@ -522,7 +532,7 @@ class DashboardPage {
 	 * Default row actions (edit / view). Extensible via `scorefix_issue_actions`.
 	 *
 	 * @param array<string, mixed> $issue Issue row.
-	 * @return array<string, array{label: string, url: string, attrs?: array<string, string>}>
+	 * @return array<string, array{label: string, url: string, title?: string, icon?: string, attrs?: array<string, string>}>
 	 */
 	public static function issue_row_actions( array $issue ) {
 		$post_id = isset( $issue['post_id'] ) ? (int) $issue['post_id'] : 0;
@@ -533,6 +543,8 @@ class DashboardPage {
 			if ( is_string( $url ) && '' !== $url ) {
 				$actions['edit'] = array(
 					'label' => __( 'Edit', 'scorefix' ),
+					'title' => __( 'Edit this post or page in the admin', 'scorefix' ),
+					'icon'  => 'dashicons-edit',
 					'url'   => $url,
 				);
 			}
@@ -546,6 +558,8 @@ class DashboardPage {
 					if ( is_string( $file ) && '' !== $file ) {
 						$actions['view_file'] = array(
 							'label' => __( 'View file', 'scorefix' ),
+							'title' => __( 'Open the media file in a new tab', 'scorefix' ),
+							'icon'  => 'dashicons-format-image',
 							'url'   => $file,
 							'attrs' => array(
 								'target' => '_blank',
@@ -558,6 +572,8 @@ class DashboardPage {
 					if ( is_string( $url ) && '' !== $url ) {
 						$actions['view'] = array(
 							'label' => __( 'View on site', 'scorefix' ),
+							'title' => __( 'View this content on the live site (new tab)', 'scorefix' ),
+							'icon'  => 'dashicons-visibility',
 							'url'   => $url,
 							'attrs' => array(
 								'target' => '_blank',
@@ -571,6 +587,9 @@ class DashboardPage {
 
 		/**
 		 * Filter actions shown for an issue row in the dashboard table.
+		 *
+		 * Each action may include: label (required), url (required), title (optional tooltip, defaults to label),
+		 * icon (optional Dashicons suffix e.g. dashicons-edit), attrs (optional link attributes).
 		 *
 		 * @param array<string, array<string, mixed>> $actions Associative list of action definitions.
 		 * @param array<string, mixed>              $issue   Issue row from scanner.

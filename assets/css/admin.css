@@ -1140,7 +1140,7 @@
 }
 
 .scorefix-table--issues .column-actions {
-	min-width: 9rem;
+	min-width: 6.5rem;
 	white-space: normal;
 }
 
@@ -1171,12 +1171,139 @@
 	color: var(--scorefix-slate-900);
 }
 
+/* Issue glossary inside expanded detail panel */
+.scorefix-issue-glossary--in-panel {
+	margin-top: 0;
+	padding: 14px 16px;
+	border: 1px solid #e2e8f0;
+	border-radius: 10px;
+	background: #fff;
+	font-size: 13px;
+	line-height: 1.5;
+}
+
+.scorefix-issue-glossary--in-panel.scorefix-issue-glossary--after-tech {
+	margin-top: 18px;
+}
+
+.scorefix-issue-glossary__heading {
+	margin: 0 0 10px;
+	font-size: 11px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: var(--scorefix-slate-500);
+}
+
+.scorefix-issue-glossary__business {
+	margin: 0 0 12px;
+	color: var(--scorefix-slate-900);
+}
+
+.scorefix-issue-glossary__ref-title {
+	margin: 0 0 6px;
+	font-size: 11px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: var(--scorefix-slate-500);
+}
+
+.scorefix-issue-glossary__refs {
+	margin: 0 0 10px 1.1rem;
+	padding: 0;
+}
+
+.scorefix-issue-glossary__refs li {
+	margin-bottom: 4px;
+}
+
+.scorefix-issue-glossary__disclaimer {
+	margin: 0;
+	font-size: 11px;
+	line-height: 1.45;
+}
+
 .scorefix-dashboard .scorefix-table--issues.widefat > thead > tr > th,
 .scorefix-dashboard .scorefix-table--issues.widefat > tbody > tr > td {
 	border-left: 0;
 }
 
-/* Full-width expandable technical details (toggle lives in Actions column) */
+/* Issue row actions: small icon buttons (ScoreFix slate + primary accents) */
+.scorefix-issue-actions {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 5px;
+}
+
+.scorefix-issue-action {
+	box-sizing: border-box;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 30px;
+	height: 30px;
+	margin: 0;
+	padding: 0;
+	border-radius: 8px;
+	border: 1px solid #e2e8f0;
+	background: #fff;
+	color: #64748b;
+	text-decoration: none;
+	box-shadow: 0 1px 1px rgba(15, 23, 42, 0.04);
+	transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+	cursor: pointer;
+	line-height: 1;
+}
+
+.scorefix-issue-action:hover {
+	color: var(--scorefix-primary);
+	background: var(--scorefix-primary-soft);
+	border-color: rgba(37, 99, 235, 0.3);
+	box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
+	text-decoration: none;
+}
+
+.scorefix-issue-action:focus-visible {
+	color: var(--scorefix-primary);
+	background: var(--scorefix-primary-soft);
+	border-color: rgba(37, 99, 235, 0.35);
+	box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
+	outline: 2px solid var(--scorefix-primary);
+	outline-offset: 2px;
+	text-decoration: none;
+}
+
+.scorefix-issue-action .dashicons {
+	width: 16px;
+	height: 16px;
+	font-size: 16px;
+	line-height: 1;
+}
+
+.scorefix-issue-action--text {
+	width: auto;
+	min-height: 30px;
+	height: auto;
+	padding: 4px 8px;
+}
+
+.scorefix-issue-action__text {
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 1.25;
+	max-width: 7.5rem;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* Full-width expandable technical details (toggle in Actions column) */
 .scorefix-issue-actions__details {
 	position: relative;
 	list-style: none;
@@ -1195,35 +1322,34 @@
 	border: 0;
 }
 
-.scorefix-issue-detail-trigger.button.button-small {
+.scorefix-issue-actions__details .scorefix-issue-detail-toggle:focus + .scorefix-issue-action--details {
+	outline: 2px solid var(--scorefix-primary);
+	outline-offset: 2px;
+}
+
+.scorefix-issue-detail-trigger__show,
+.scorefix-issue-detail-trigger__hide {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	margin: 0;
-	cursor: pointer;
-	font-weight: 600;
-	user-select: none;
-	box-shadow: none;
-}
-
-.scorefix-issue-actions__details .scorefix-issue-detail-toggle:focus + .scorefix-issue-detail-trigger {
-	outline: 2px solid var(--scorefix-primary);
-	outline-offset: 2px;
+	width: 100%;
+	height: 100%;
+	min-height: 30px;
 }
 
 .scorefix-issue-detail-trigger__hide {
 	display: none;
 }
 
-.scorefix-table--issues tr.scorefix-issue-main:has(.scorefix-issue-detail-toggle:checked) .scorefix-issue-detail-trigger__hide {
-	display: inline;
+.scorefix-table--issues tr.scorefix-issue-main:has(.scorefix-issue-detail-toggle:checked) .scorefix-issue-action--details .scorefix-issue-detail-trigger__hide {
+	display: inline-flex;
 }
 
-.scorefix-table--issues tr.scorefix-issue-main:has(.scorefix-issue-detail-toggle:checked) .scorefix-issue-detail-trigger__show {
+.scorefix-table--issues tr.scorefix-issue-main:has(.scorefix-issue-detail-toggle:checked) .scorefix-issue-action--details .scorefix-issue-detail-trigger__show {
 	display: none;
 }
 
-.scorefix-table--issues tr.scorefix-issue-main:has(.scorefix-issue-detail-toggle:checked) .scorefix-issue-detail-trigger.button {
+.scorefix-table--issues tr.scorefix-issue-main:has(.scorefix-issue-detail-toggle:checked) .scorefix-issue-action--details {
 	background: var(--scorefix-primary-soft);
 	border-color: rgba(37, 99, 235, 0.35);
 	color: var(--scorefix-primary);
@@ -1364,40 +1490,98 @@
 	max-width: 52rem;
 }
 
-.scorefix-issue-actions {
-	list-style: none;
-	margin: 0;
-	padding: 0;
-	display: flex;
-	flex-direction: column;
-	align-items: flex-start;
-	gap: 6px;
-}
-
-.scorefix-issue-actions .button-small {
-	text-align: center;
-	border-radius: 8px;
-	font-weight: 600;
-}
-
 .scorefix-card--issues {
 	padding-bottom: 20px;
 }
 
+/* Issues list pagination (paginate_links) — chip row aligned with ScoreFix cards */
 .scorefix-issues-pagination {
 	margin-top: 16px;
-	padding-top: 12px;
-	border-top: 1px solid #e2e8f0;
+	padding: 12px 14px;
+	border: 1px solid #e2e8f0;
+	border-radius: var(--scorefix-radius-lg);
+	background: linear-gradient(180deg, #fafbfc 0%, #f8fafc 100%);
+	box-shadow: var(--scorefix-shadow-card);
 }
 
 .scorefix-issues-pagination .tablenav-pages {
 	float: none;
 	margin: 0;
-	text-align: left;
+	padding: 0;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+	justify-content: flex-start;
 }
 
-.scorefix-issues-pagination .tablenav-pages a,
-.scorefix-issues-pagination .tablenav-pages span {
-	display: inline-block;
-	margin: 0 4px 4px 0;
+.scorefix-issues-pagination .tablenav-pages .page-numbers {
+	box-sizing: border-box;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 30px;
+	height: 30px;
+	padding: 0 8px;
+	margin: 0;
+	border-radius: 8px;
+	border: 1px solid #e2e8f0;
+	background: #fff;
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 1;
+	color: var(--scorefix-slate-700);
+	text-decoration: none;
+	box-shadow: 0 1px 1px rgba(15, 23, 42, 0.04);
+	transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.scorefix-issues-pagination .tablenav-pages a.page-numbers:hover,
+.scorefix-issues-pagination .tablenav-pages a.page-numbers:focus {
+	color: var(--scorefix-primary);
+	background: var(--scorefix-primary-soft);
+	border-color: rgba(37, 99, 235, 0.28);
+	box-shadow: 0 1px 4px rgba(37, 99, 235, 0.1);
+	outline: none;
+	text-decoration: none;
+}
+
+.scorefix-issues-pagination .tablenav-pages a.page-numbers:focus-visible {
+	outline: 2px solid var(--scorefix-primary);
+	outline-offset: 2px;
+}
+
+.scorefix-issues-pagination .tablenav-pages span.page-numbers.current,
+.scorefix-issues-pagination .tablenav-pages span.page-numbers.dots {
+	cursor: default;
+}
+
+.scorefix-issues-pagination .tablenav-pages span.page-numbers.current {
+	background: var(--scorefix-primary-soft);
+	border-color: rgba(37, 99, 235, 0.35);
+	color: var(--scorefix-primary);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.scorefix-issues-pagination .tablenav-pages span.page-numbers.dots {
+	min-width: auto;
+	padding: 0 6px;
+	border: none;
+	background: transparent;
+	box-shadow: none;
+	color: var(--scorefix-slate-500);
+	font-weight: 500;
+}
+
+.scorefix-issues-pagination .tablenav-pages a.prev.page-numbers,
+.scorefix-issues-pagination .tablenav-pages a.next.page-numbers {
+	min-width: auto;
+	padding: 0 10px;
+	font-weight: 600;
+	color: #475569;
+}
+
+.scorefix-issues-pagination .tablenav-pages a.prev.page-numbers:hover,
+.scorefix-issues-pagination .tablenav-pages a.next.page-numbers:hover {
+	color: var(--scorefix-primary);
 }

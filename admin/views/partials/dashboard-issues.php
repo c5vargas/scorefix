@@ -11,6 +11,7 @@
 defined( 'ABSPATH' ) || exit;
 
 use ScoreFix\Admin\DashboardPage;
+use ScoreFix\Scanner\IssueGlossary;
 
 if ( ! isset( $scorefix_issues_view ) || ! is_array( $scorefix_issues_view ) ) {
 	$scorefix_issues_view = DashboardPage::build_issues_table_view( isset( $issues ) && is_array( $issues ) ? $issues : array() );
@@ -100,6 +101,8 @@ $scorefix_iv_pages    = isset( $scorefix_iv['pagination_html'] ) ? (string) $sco
 								continue;
 							}
 							list( $scorefix_issue_title, $scorefix_issue_desc ) = DashboardPage::describe_issue( $scorefix_issue );
+							$scorefix_issue_type = isset( $scorefix_issue['type'] ) ? (string) $scorefix_issue['type'] : '';
+							$scorefix_glossary   = IssueGlossary::get_entry( $scorefix_issue_type );
 							$scorefix_tone       = DashboardPage::issue_severity_tone( $scorefix_issue );
 							$scorefix_sev_label  = DashboardPage::issue_severity_label( $scorefix_issue );
 							$scorefix_post_id    = isset( $scorefix_issue['post_id'] ) ? (int) $scorefix_issue['post_id'] : 0;
@@ -110,6 +113,9 @@ $scorefix_iv_pages    = isset( $scorefix_iv['pagination_html'] ) ? (string) $sco
 							$scorefix_ctx_label = DashboardPage::issue_context_label( $scorefix_issue );
 							$scorefix_preview   = DashboardPage::issue_preview_fields( $scorefix_issue );
 							$scorefix_actions   = DashboardPage::issue_row_actions( $scorefix_issue );
+							$scorefix_has_preview = ! empty( $scorefix_preview );
+							$scorefix_has_glossary = is_array( $scorefix_glossary ) && ( ! empty( $scorefix_glossary['business'] ) || ! empty( $scorefix_glossary['references'] ) );
+							$scorefix_show_detail_toggle = $scorefix_has_preview || $scorefix_has_glossary;
 							$scorefix_detail_id = wp_unique_id( 'sf-issue-detail-' );
 							$scorefix_use_alt   = ( 0 !== ( $scorefix_issue_row_index % 2 ) );
 							$scorefix_row_alt   = $scorefix_use_alt ? ' scorefix-issue-main--alt' : '';
@@ -149,8 +155,7 @@ $scorefix_iv_pages    = isset( $scorefix_iv['pagination_html'] ) ? (string) $sco
 								<td class="column-actions">
 									<?php
 									$scorefix_has_actions = ! empty( $scorefix_actions );
-									$scorefix_has_preview = ! empty( $scorefix_preview );
-									if ( ! $scorefix_has_actions && ! $scorefix_has_preview ) :
+									if ( ! $scorefix_has_actions && ! $scorefix_show_detail_toggle ) :
 										?>
 										<span class="scorefix-muted">—</span>
 									<?php else : ?>
@@ -161,23 +166,43 @@ $scorefix_iv_pages    = isset( $scorefix_iv['pagination_html'] ) ? (string) $sco
 													if ( ! is_array( $scorefix_action ) || empty( $scorefix_action['url'] ) || empty( $scorefix_action['label'] ) ) {
 														continue;
 													}
-													$scorefix_aurl   = (string) $scorefix_action['url'];
-													$scorefix_alabel = (string) $scorefix_action['label'];
-													$scorefix_attrs      = isset( $scorefix_action['attrs'] ) && is_array( $scorefix_action['attrs'] ) ? $scorefix_action['attrs'] : array();
+													$scorefix_aurl    = (string) $scorefix_action['url'];
+													$scorefix_alabel  = (string) $scorefix_action['label'];
+													$scorefix_atitle  = isset( $scorefix_action['title'] ) && '' !== (string) $scorefix_action['title']
+														? (string) $scorefix_action['title']
+														: $scorefix_alabel;
+													$scorefix_aicon   = isset( $scorefix_action['icon'] ) ? (string) $scorefix_action['icon'] : '';
+													$scorefix_icon_ok = ( '' !== $scorefix_aicon && preg_match( '/^dashicons-[a-z0-9-]+$/', $scorefix_aicon ) );
+													$scorefix_attrs   = isset( $scorefix_action['attrs'] ) && is_array( $scorefix_action['attrs'] ) ? $scorefix_action['attrs'] : array();
 													$scorefix_attr_html = '';
 													foreach ( $scorefix_attrs as $scorefix_an => $scorefix_av ) {
 														$scorefix_attr_html .= sprintf( ' %s="%s"', esc_attr( (string) $scorefix_an ), esc_attr( (string) $scorefix_av ) );
 													}
+													$scorefix_action_class = 'scorefix-issue-action' . ( $scorefix_icon_ok ? '' : ' scorefix-issue-action--text' );
 													?>
-													<li><a class="button button-small" href="<?php echo esc_url( $scorefix_aurl ); ?>"<?php echo $scorefix_attr_html; ?>><?php echo esc_html( $scorefix_alabel ); ?></a></li>
+													<li>
+														<a class="<?php echo esc_attr( $scorefix_action_class ); ?>" href="<?php echo esc_url( $scorefix_aurl ); ?>" title="<?php echo esc_attr( $scorefix_atitle ); ?>" aria-label="<?php echo esc_attr( $scorefix_atitle ); ?>"<?php echo $scorefix_attr_html; ?>>
+															<?php if ( $scorefix_icon_ok ) : ?>
+																<span class="dashicons <?php echo esc_attr( $scorefix_aicon ); ?>" aria-hidden="true"></span>
+																<span class="screen-reader-text"><?php echo esc_html( $scorefix_alabel ); ?></span>
+															<?php else : ?>
+																<span class="scorefix-issue-action__text"><?php echo esc_html( $scorefix_alabel ); ?></span>
+															<?php endif; ?>
+														</a>
+													</li>
 												<?php endforeach; ?>
 											<?php endif; ?>
-											<?php if ( $scorefix_has_preview ) : ?>
+											<?php if ( $scorefix_show_detail_toggle ) : ?>
 												<li class="scorefix-issue-actions__details">
 													<input type="checkbox" id="<?php echo esc_attr( $scorefix_detail_id ); ?>" class="scorefix-issue-detail-toggle" />
-													<label class="scorefix-issue-detail-trigger button button-small" for="<?php echo esc_attr( $scorefix_detail_id ); ?>">
-														<span class="scorefix-issue-detail-trigger__show"><?php esc_html_e( 'Details', 'scorefix' ); ?></span>
-														<span class="scorefix-issue-detail-trigger__hide"><?php esc_html_e( 'Hide', 'scorefix' ); ?></span>
+													<label class="scorefix-issue-action scorefix-issue-action--details" for="<?php echo esc_attr( $scorefix_detail_id ); ?>" title="<?php echo esc_attr( __( 'Show or hide details and orientative references for this issue', 'scorefix' ) ); ?>">
+														<span class="scorefix-issue-detail-trigger__show" aria-hidden="true">
+															<span class="dashicons dashicons-info"></span>
+														</span>
+														<span class="scorefix-issue-detail-trigger__hide" aria-hidden="true">
+															<span class="dashicons dashicons-arrow-up-alt2"></span>
+														</span>
+														<span class="screen-reader-text"><?php esc_html_e( 'Toggle details', 'scorefix' ); ?></span>
 													</label>
 												</li>
 											<?php endif; ?>
@@ -185,17 +210,38 @@ $scorefix_iv_pages    = isset( $scorefix_iv['pagination_html'] ) ? (string) $sco
 									<?php endif; ?>
 								</td>
 							</tr>
-							<?php if ( ! empty( $scorefix_preview ) ) : ?>
+							<?php if ( $scorefix_show_detail_toggle ) : ?>
 								<tr class="scorefix-issue-detail-row<?php echo esc_attr( $scorefix_detail_alt ); ?>">
 									<td class="scorefix-issue-detail-panel" colspan="4">
 										<div class="scorefix-issue-detail-panel__inner">
-											<p class="scorefix-issue-detail-panel__title"><?php esc_html_e( 'Technical details', 'scorefix' ); ?></p>
-											<dl class="scorefix-issue-preview__dl scorefix-issue-preview__dl--panel">
-												<?php foreach ( $scorefix_preview as $scorefix_pf ) : ?>
-													<dt><?php echo esc_html( $scorefix_pf['label'] ); ?></dt>
-													<dd><code class="scorefix-issue-code"><?php echo esc_html( $scorefix_pf['value'] ); ?></code></dd>
-												<?php endforeach; ?>
-											</dl>
+											<?php if ( $scorefix_has_preview ) : ?>
+												<p class="scorefix-issue-detail-panel__title"><?php esc_html_e( 'Technical details', 'scorefix' ); ?></p>
+												<dl class="scorefix-issue-preview__dl scorefix-issue-preview__dl--panel">
+													<?php foreach ( $scorefix_preview as $scorefix_pf ) : ?>
+														<dt><?php echo esc_html( $scorefix_pf['label'] ); ?></dt>
+														<dd><code class="scorefix-issue-code"><?php echo esc_html( $scorefix_pf['value'] ); ?></code></dd>
+													<?php endforeach; ?>
+												</dl>
+											<?php endif; ?>
+											<?php if ( $scorefix_has_glossary ) : ?>
+												<div class="scorefix-issue-glossary scorefix-issue-glossary--in-panel<?php echo $scorefix_has_preview ? ' scorefix-issue-glossary--after-tech' : ''; ?>">
+													<p class="scorefix-issue-glossary__heading"><?php esc_html_e( 'What this means', 'scorefix' ); ?></p>
+													<?php if ( ! empty( $scorefix_glossary['business'] ) ) : ?>
+														<p class="scorefix-issue-glossary__business"><?php echo esc_html( (string) $scorefix_glossary['business'] ); ?></p>
+													<?php endif; ?>
+													<?php if ( ! empty( $scorefix_glossary['references'] ) && is_array( $scorefix_glossary['references'] ) ) : ?>
+														<p class="scorefix-issue-glossary__ref-title"><?php esc_html_e( 'Orientative references', 'scorefix' ); ?></p>
+														<ul class="scorefix-issue-glossary__refs">
+															<?php foreach ( $scorefix_glossary['references'] as $scorefix_ref_line ) : ?>
+																<li><?php echo esc_html( (string) $scorefix_ref_line ); ?></li>
+															<?php endforeach; ?>
+														</ul>
+													<?php endif; ?>
+													<?php if ( ! empty( $scorefix_glossary['disclaimer'] ) ) : ?>
+														<p class="scorefix-issue-glossary__disclaimer scorefix-muted"><?php echo esc_html( (string) $scorefix_glossary['disclaimer'] ); ?></p>
+													<?php endif; ?>
+												</div>
+											<?php endif; ?>
 											<p class="scorefix-issue-preview__hint scorefix-muted"><?php esc_html_e( 'Use Edit to open the post or media item and fix the content in the editor.', 'scorefix' ); ?></p>
 										</div>
 									</td>

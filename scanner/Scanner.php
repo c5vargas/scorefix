@@ -8,6 +8,11 @@
 namespace ScoreFix\Scanner;
 
 use ScoreFix\Fixes\FixEngine;
+use ScoreFix\Scanner\Rules\ButtonsRule;
+use ScoreFix\Scanner\Rules\ContrastInlineRule;
+use ScoreFix\Scanner\Rules\FormControlsRule;
+use ScoreFix\Scanner\Rules\ImagesRule;
+use ScoreFix\Scanner\Rules\LinksRule;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -22,11 +27,26 @@ class Scanner {
 	 * Severity weights for scoring (sum capped).
 	 */
 	const PENALTY = array(
-		'image_no_alt'      => 3,
-		'link_no_text'      => 3,
-		'button_no_text'    => 4,
-		'input_no_label'    => 4,
-		'contrast_risk'     => 2,
+		'image_no_alt'                   => 3,
+		'link_no_text'                   => 3,
+		'button_no_text'                 => 4,
+		'input_no_label'                 => 4,
+		'contrast_risk'                  => 2,
+		// Reserved weights for upcoming rules (Phase 2); conservative defaults.
+		'heading_multiple_h1'            => 2,
+		'heading_level_skip'             => 2,
+		'landmark_no_main'               => 1,
+		'landmark_multiple_main'         => 2,
+		'landmark_nav_unnamed'           => 1,
+		'link_generic_text'              => 2,
+		'form_radio_group_no_legend'     => 2,
+		'form_required_no_error_hint'   => 1,
+		'form_autocomplete_missing'      => 1,
+		'video_no_text_track'            => 2,
+		'audio_no_text_track'            => 2,
+		'iframe_missing_title'          => 3,
+		'table_missing_th'               => 2,
+		'table_missing_caption'          => 1,
 	);
 
 	/**
@@ -161,7 +181,7 @@ class Scanner {
 			$alt = get_post_meta( $att_id, '_wp_attachment_image_alt', true );
 			$alt = is_string( $alt ) ? trim( $alt ) : '';
 			if ( '' === $alt ) {
-				$issues[] = $this->make_issue(
+				$issues[] = $this->create_issue(
 					'image_no_alt',
 					'high',
 					array(
@@ -169,6 +189,7 @@ class Scanner {
 						'context'   => 'media_library',
 						'title'     => get_the_title( $att_id ),
 						'impact'    => 'business',
+						'source'    => 'attachment',
 					)
 				);
 			}
@@ -198,243 +219,29 @@ class Scanner {
 
 		$xpath = new \DOMXPath( $dom );
 
-		// Images: missing or empty alt (decorative heuristic: role="presentation" skipped).
-		foreach ( $xpath->query( '//img' ) as $img ) {
-			if ( ! $img instanceof \DOMElement ) {
-				continue;
-			}
-			$role = strtolower( (string) $img->getAttribute( 'role' ) );
-			if ( 'presentation' === $role || 'none' === $role ) {
-				continue;
-			}
-			if ( ! $img->hasAttribute( 'alt' ) || trim( $img->getAttribute( 'alt' ) ) === '' ) {
-				$issues[] = $this->make_issue(
-					'image_no_alt',
-					'high',
-					array(
-						'post_id' => (int) $post_id,
-						'context' => 'content',
-						'src'     => substr( (string) $img->getAttribute( 'src' ), 0, 120 ),
-						'impact'  => 'readability',
-					)
-				);
-			}
-		}
-
-		// Links without accessible name.
-		foreach ( $xpath->query( '//a[@href]' ) as $a ) {
-			if ( ! $a instanceof \DOMElement ) {
-				continue;
-			}
-			if ( ! $this->element_has_accessible_name( $a ) ) {
-				$issues[] = $this->make_issue(
-					'link_no_text',
-					'high',
-					array(
-						'post_id' => (int) $post_id,
-						'href'    => substr( (string) $a->getAttribute( 'href' ), 0, 120 ),
-						'impact'  => 'conversion',
-					)
-				);
-			}
-		}
-
-		// Buttons without accessible name.
-		foreach ( $xpath->query( '//button' ) as $btn ) {
-			if ( ! $btn instanceof \DOMElement ) {
-				continue;
-			}
-			if ( ! $this->element_has_accessible_name( $btn ) ) {
-				$issues[] = $this->make_issue(
-					'button_no_text',
-					'high',
-					array(
-						'post_id' => (int) $post_id,
-						'impact'  => 'conversion',
-					)
-				);
-			}
-		}
-
-		// Inputs: text-like, checkbox, and radio without label.
-		$input_types = array( 'text', 'email', 'tel', 'url', 'search', 'number', 'password', 'checkbox', 'radio' );
-		foreach ( $xpath->query( '//input' ) as $input ) {
-			if ( ! $input instanceof \DOMElement ) {
-				continue;
-			}
-			$type = strtolower( (string) $input->getAttribute( 'type' ) );
-			if ( '' === $type ) {
-				$type = 'text';
-			}
-			if ( ! in_array( $type, $input_types, true ) ) {
-				continue;
-			}
-			if ( $this->form_control_has_label( $input, $dom ) ) {
-				continue;
-			}
-			$issues[] = $this->make_issue(
-				'input_no_label',
-				'high',
-				array(
-					'post_id'    => (int) $post_id,
-					'input_type' => $type,
-					'impact'     => 'conversion',
-				)
-			);
-		}
-
-		// Select and textarea without label.
-		foreach ( $xpath->query( '//select' ) as $sel ) {
-			if ( ! $sel instanceof \DOMElement ) {
-				continue;
-			}
-			if ( $this->form_control_has_label( $sel, $dom ) ) {
-				continue;
-			}
-			$issues[] = $this->make_issue(
-				'input_no_label',
-				'high',
-				array(
-					'post_id'    => (int) $post_id,
-					'input_type' => 'select',
-					'impact'     => 'conversion',
-				)
-			);
-		}
-		foreach ( $xpath->query( '//textarea' ) as $ta ) {
-			if ( ! $ta instanceof \DOMElement ) {
-				continue;
-			}
-			if ( $this->form_control_has_label( $ta, $dom ) ) {
-				continue;
-			}
-			$issues[] = $this->make_issue(
-				'input_no_label',
-				'high',
-				array(
-					'post_id'    => (int) $post_id,
-					'input_type' => 'textarea',
-					'impact'     => 'conversion',
-				)
-			);
-		}
-
-		// Contrast heuristics on inline styles (scanner-only; see ContrastStyleAnalyzer).
-		foreach ( $xpath->query( '//*[@style]' ) as $el ) {
-			if ( ! $el instanceof \DOMElement ) {
-				continue;
-			}
-			$raw_style = (string) $el->getAttribute( 'style' );
-			$contrast  = ContrastStyleAnalyzer::analyze( $raw_style );
-			if ( null === $contrast ) {
-				continue;
-			}
-			$extra = array(
-				'post_id'        => (int) $post_id,
-				'impact'         => 'readability',
-				'hint'           => isset( $contrast['hint'] ) ? (string) $contrast['hint'] : 'unknown',
-				'style_snippet'  => substr( preg_replace( '/\s+/', ' ', $raw_style ), 0, 120 ),
-			);
-			if ( isset( $contrast['ratio'] ) ) {
-				$extra['ratio'] = $contrast['ratio'];
-			}
-			if ( isset( $contrast['detail'] ) ) {
-				$extra['detail'] = (string) $contrast['detail'];
-			}
-			$issues[] = $this->make_issue( 'contrast_risk', 'medium', $extra );
-		}
+		$maker = array( $this, 'create_issue' );
+		$issues = array_merge( $issues, ImagesRule::collect( $xpath, (int) $post_id, $maker ) );
+		$issues = array_merge( $issues, LinksRule::collect( $xpath, (int) $post_id, $maker ) );
+		$issues = array_merge( $issues, ButtonsRule::collect( $xpath, (int) $post_id, $maker ) );
+		$issues = array_merge( $issues, FormControlsRule::collect( $xpath, $dom, (int) $post_id, $maker ) );
+		$issues = array_merge( $issues, ContrastInlineRule::collect( $xpath, (int) $post_id, $maker ) );
 
 		return $issues;
 	}
 
 	/**
-	 * Whether interactive element has accessible name.
+	 * Public factory for scan rules (wraps make_issue, default metadata).
 	 *
-	 * @param \DOMElement $el Element.
-	 * @return bool
+	 * @param string               $type     Issue type.
+	 * @param string               $severity Severity slug.
+	 * @param array<string, mixed> $extra    Extra fields.
+	 * @return array<string, mixed>
 	 */
-	protected function element_has_accessible_name( \DOMElement $el ) {
-		$label = trim( $el->textContent ?? '' );
-		if ( $label !== '' ) {
-			return true;
+	public function create_issue( $type, $severity, array $extra ) {
+		if ( ! isset( $extra['source'] ) ) {
+			$extra['source'] = 'post_content';
 		}
-		$aria = trim( (string) $el->getAttribute( 'aria-label' ) );
-		if ( $aria !== '' ) {
-			return true;
-		}
-		$labelledby = trim( (string) $el->getAttribute( 'aria-labelledby' ) );
-		if ( $labelledby !== '' ) {
-			return true;
-		}
-		$title = trim( (string) $el->getAttribute( 'title' ) );
-		if ( $title !== '' ) {
-			return true;
-		}
-		// Image inside link/button may provide name.
-		$imgs = $el->getElementsByTagName( 'img' );
-		if ( $imgs->length > 0 ) {
-			$img = $imgs->item( 0 );
-			if ( $img instanceof \DOMElement ) {
-				$alt = trim( (string) $img->getAttribute( 'alt' ) );
-				if ( $alt !== '' ) {
-					return true;
-				}
-			}
-		}
-		return false;
-	}
-
-	/**
-	 * Whether input, select, or textarea is associated with a label (explicit or wrapping).
-	 *
-	 * @param \DOMElement   $el  Element.
-	 * @param \DOMDocument $dom Document.
-	 * @return bool
-	 */
-	protected function form_control_has_label( \DOMElement $el, \DOMDocument $dom ) {
-		$id = trim( (string) $el->getAttribute( 'id' ) );
-		if ( $id !== '' ) {
-			$xpath = new \DOMXPath( $dom );
-			$labels = $xpath->query( '//label[@for="' . self::escape_xpath_literal( $id ) . '"]' );
-			if ( $labels && $labels->length > 0 ) {
-				return true;
-			}
-		}
-		$aria = trim( (string) $el->getAttribute( 'aria-label' ) );
-		if ( $aria !== '' ) {
-			return true;
-		}
-		$alb = trim( (string) $el->getAttribute( 'aria-labelledby' ) );
-		if ( $alb !== '' ) {
-			return true;
-		}
-		$xpath = new \DOMXPath( $dom );
-		$wrap = $xpath->query( 'ancestor::label', $el );
-		if ( $wrap && $wrap->length > 0 ) {
-			return true;
-		}
-		$placeholder = trim( (string) $el->getAttribute( 'placeholder' ) );
-		// Placeholder alone is weak; still flag as partial for MVP we require label or aria.
-		if ( $placeholder !== '' ) {
-			return apply_filters( 'scorefix_count_placeholder_as_label', false, $el );
-		}
-		return false;
-	}
-
-	/**
-	 * Escape string for XPath literal.
-	 *
-	 * @param string $s String.
-	 * @return string
-	 */
-	protected static function escape_xpath_literal( $s ) {
-		if ( false === strpos( $s, "'" ) ) {
-			return "'" . $s . "'";
-		}
-		if ( false === strpos( $s, '"' ) ) {
-			return '"' . $s . '"';
-		}
-		return "concat('" . str_replace( "'", "', \"'\", '", $s ) . "')";
+		return $this->make_issue( $type, $severity, $extra );
 	}
 
 	/**

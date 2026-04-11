@@ -1,0 +1,241 @@
+<?php
+/**
+ * Static glossary: issue type to business copy and orientative WCAG/Lighthouse pointers.
+ *
+ * @package ScoreFix
+ */
+
+namespace ScoreFix\Scanner;
+
+defined( 'ABSPATH' ) || exit;
+
+/**
+ * Class IssueGlossary
+ */
+class IssueGlossary {
+
+	/**
+	 * Legal / product disclaimer for all glossary panels.
+	 *
+	 * @return string
+	 */
+	public static function disclaimer() {
+		return __( 'These references are orientative only. ScoreFix does not guarantee WCAG compliance, legal accessibility conformance, or a specific Lighthouse score.', 'scorefix' );
+	}
+
+	/**
+	 * Glossary entry for an issue type, or generic fallback.
+	 *
+	 * @param string $type Issue type slug (e.g. image_no_alt).
+	 * @return array{
+	 *   title: string,
+	 *   business: string,
+	 *   references: array<int, string>,
+	 *   disclaimer: string
+	 * }
+	 */
+	public static function get_entry( $type ) {
+		$type = sanitize_key( (string) $type );
+		$defs  = self::definitions();
+		if ( isset( $defs[ $type ] ) ) {
+			$entry = $defs[ $type ];
+			$entry['disclaimer'] = self::disclaimer();
+			return apply_filters( 'scorefix_issue_glossary_entry', $entry, $type );
+		}
+		$fallback = self::generic_entry( $type );
+		return apply_filters( 'scorefix_issue_glossary_entry', $fallback, $type );
+	}
+
+	/**
+	 * @return array<string, array{title: string, business: string, references: array<int, string>}>
+	 */
+	protected static function definitions() {
+		$d = array();
+
+		$d['image_no_alt'] = array(
+			'title'    => __( 'Image missing alternative text (ALT)', 'scorefix' ),
+			'business' => __( 'Screen readers and search engines use ALT to understand images. Missing descriptions hurt discoverability and trust.', 'scorefix' ),
+			'references' => array(
+				__( 'Lighthouse (orientative): Accessibility — Image elements have [alt] attributes', 'scorefix' ),
+				__( 'WCAG 2.2 (orientative): 1.1.1 Non-text Content', 'scorefix' ),
+			),
+		);
+
+		$d['link_no_text'] = array(
+			'title'    => __( 'Link without an accessible name', 'scorefix' ),
+			'business' => __( 'People using keyboards or assistive tech need a clear name for every link. Empty or icon-only links are easy to miss and reduce clicks.', 'scorefix' ),
+			'references' => array(
+				__( 'Lighthouse (orientative): link-name', 'scorefix' ),
+				__( 'WCAG 2.2 (orientative): 2.4.4 Link Purpose (In Context); 4.1.2 Name, Role, Value', 'scorefix' ),
+			),
+		);
+
+		$d['button_no_text'] = array(
+			'title'    => __( 'Button without an accessible name', 'scorefix' ),
+			'business' => __( 'Buttons must say what they do. Unnamed buttons confuse shoppers and increase form abandonment.', 'scorefix' ),
+			'references' => array(
+				__( 'Lighthouse (orientative): button-name', 'scorefix' ),
+				__( 'WCAG 2.2 (orientative): 4.1.2 Name, Role, Value', 'scorefix' ),
+			),
+		);
+
+		$d['input_no_label'] = array(
+			'title'    => __( 'Form control without a label', 'scorefix' ),
+			'business' => __( 'Labels (or equivalent aria-* associations) tell users what to enter. Missing labels are a common checkout and lead-gen failure point.', 'scorefix' ),
+			'references' => array(
+				__( 'Lighthouse (orientative): label', 'scorefix' ),
+				__( 'WCAG 2.2 (orientative): 1.3.1 Info and Relationships; 3.3.2 Labels or Instructions', 'scorefix' ),
+			),
+		);
+
+		$d['contrast_risk'] = array(
+			'title'    => __( 'Possible low contrast (inline styles)', 'scorefix' ),
+			'business' => __( 'When text and background colors are too similar, content is hard to read on many screens. Fixing contrast improves readability and confidence.', 'scorefix' ),
+			'references' => array(
+				__( 'Lighthouse (orientative): color-contrast', 'scorefix' ),
+				__( 'WCAG 2.2 (orientative): 1.4.3 Contrast (Minimum)', 'scorefix' ),
+			),
+		);
+
+		// Reserved for upcoming scanner rules (Phase 2); glossary ready from Phase 1.
+		$d['heading_multiple_h1'] = array(
+			'title'    => __( 'Multiple level-one headings', 'scorefix' ),
+			'business' => __( 'A predictable heading outline helps people skim content. More than one main heading can confuse navigation and SEO structure.', 'scorefix' ),
+			'references' => array(
+				__( 'Lighthouse (orientative): heading-order / semantic structure', 'scorefix' ),
+				__( 'WCAG 2.2 (orientative): 1.3.1 Info and Relationships; 2.4.6 Headings and Labels', 'scorefix' ),
+			),
+		);
+
+		$d['heading_level_skip'] = array(
+			'title'    => __( 'Skipped heading level', 'scorefix' ),
+			'business' => __( 'Skipping levels (for example from h2 to h4) breaks the outline screen-reader users rely on.', 'scorefix' ),
+			'references' => array(
+				__( 'Lighthouse (orientative): heading-order', 'scorefix' ),
+				__( 'WCAG 2.2 (orientative): 1.3.1 Info and Relationships', 'scorefix' ),
+			),
+		);
+
+		$d['landmark_no_main'] = array(
+			'title'    => __( 'No main landmark', 'scorefix' ),
+			'business' => __( 'A main region helps assistive tech jump to primary content. Full pages often use <main> or role="main" once.', 'scorefix' ),
+			'references' => array(
+				__( 'WCAG 2.2 (orientative): 1.3.1 Info and Relationships; 2.4.1 Bypass Blocks', 'scorefix' ),
+			),
+		);
+
+		$d['landmark_multiple_main'] = array(
+			'title'    => __( 'Multiple main landmarks', 'scorefix' ),
+			'business' => __( 'There should usually be a single main region per page so users know where primary content starts and ends.', 'scorefix' ),
+			'references' => array(
+				__( 'WCAG 2.2 (orientative): 1.3.1 Info and Relationships', 'scorefix' ),
+			),
+		);
+
+		$d['landmark_nav_unnamed'] = array(
+			'title'    => __( 'Navigation landmark without a distinguishable name', 'scorefix' ),
+			'business' => __( 'When there are several navigation regions, each needs a unique accessible name so users can tell them apart.', 'scorefix' ),
+			'references' => array(
+				__( 'WCAG 2.2 (orientative): 1.3.1 Info and Relationships; 2.4.1 Bypass Blocks', 'scorefix' ),
+			),
+		);
+
+		$d['link_generic_text'] = array(
+			'title'    => __( 'Generic link text', 'scorefix' ),
+			'business' => __( 'Phrases like “click here” or “read more” do not describe the destination. Descriptive links improve clarity and conversions.', 'scorefix' ),
+			'references' => array(
+				__( 'Lighthouse (orientative): link-text', 'scorefix' ),
+				__( 'WCAG 2.2 (orientative): 2.4.4 Link Purpose (In Context)', 'scorefix' ),
+			),
+		);
+
+		$d['form_radio_group_no_legend'] = array(
+			'title'    => __( 'Radio group without fieldset/legend', 'scorefix' ),
+			'business' => __( 'Grouped radios should share a visible or programmatic group label so the question is clear.', 'scorefix' ),
+			'references' => array(
+				__( 'WCAG 2.2 (orientative): 1.3.1 Info and Relationships; 3.3.2 Labels or Instructions', 'scorefix' ),
+			),
+		);
+
+		$d['form_required_no_error_hint'] = array(
+			'title'    => __( 'Required field without clear error guidance', 'scorefix' ),
+			'business' => __( 'Required fields should communicate errors in an accessible way. Heuristic checks are limited and may not catch all patterns.', 'scorefix' ),
+			'references' => array(
+				__( 'WCAG 2.2 (orientative): 3.3.1 Error Identification; 3.3.3 Error Suggestion', 'scorefix' ),
+			),
+		);
+
+		$d['form_autocomplete_missing'] = array(
+			'title'    => __( 'Missing autocomplete on common fields', 'scorefix' ),
+			'business' => __( 'Appropriate autocomplete values help users fill forms faster and more accurately, especially on mobile.', 'scorefix' ),
+			'references' => array(
+				__( 'WCAG 2.2 (orientative): 1.3.5 Identify Input Purpose', 'scorefix' ),
+			),
+		);
+
+		$d['video_no_text_track'] = array(
+			'title'    => __( 'Video without captions or text alternative', 'scorefix' ),
+			'business' => __( 'Captions and transcripts make video usable in noisy environments and for people who cannot hear audio.', 'scorefix' ),
+			'references' => array(
+				__( 'WCAG 2.2 (orientative): 1.2.2 Captions (Prerecorded); 1.1.1 Non-text Content', 'scorefix' ),
+			),
+		);
+
+		$d['audio_no_text_track'] = array(
+			'title'    => __( 'Audio without text alternative', 'scorefix' ),
+			'business' => __( 'Audio-only content should have an equivalent text version or description where appropriate.', 'scorefix' ),
+			'references' => array(
+				__( 'WCAG 2.2 (orientative): 1.2.1 Audio-only and Video-only (Prerecorded)', 'scorefix' ),
+			),
+		);
+
+		$d['iframe_missing_title'] = array(
+			'title'    => __( 'iframe without a title', 'scorefix' ),
+			'business' => __( 'A descriptive title helps users understand embedded content (maps, players, widgets) before they enter the frame.', 'scorefix' ),
+			'references' => array(
+				__( 'Lighthouse (orientative): frame-title', 'scorefix' ),
+				__( 'WCAG 2.2 (orientative): 4.1.2 Name, Role, Value', 'scorefix' ),
+			),
+		);
+
+		$d['table_missing_th'] = array(
+			'title'    => __( 'Data table without header cells', 'scorefix' ),
+			'business' => __( 'Header cells associate columns or rows with their meaning for screen readers.', 'scorefix' ),
+			'references' => array(
+				__( 'WCAG 2.2 (orientative): 1.3.1 Info and Relationships', 'scorefix' ),
+			),
+		);
+
+		$d['table_missing_caption'] = array(
+			'title'    => __( 'Data table without a caption', 'scorefix' ),
+			'business' => __( 'A caption summarizes the table purpose. It is optional for very simple tables but helps comprehension on complex data.', 'scorefix' ),
+			'references' => array(
+				__( 'WCAG 2.2 (orientative): 1.3.1 Info and Relationships', 'scorefix' ),
+			),
+		);
+
+		return $d;
+	}
+
+	/**
+	 * Fallback when type is unknown.
+	 *
+	 * @param string $type Raw type slug.
+	 * @return array{title: string, business: string, references: array<int, string>, disclaimer: string}
+	 */
+	protected static function generic_entry( $type ) {
+		$label = '' !== $type ? $type : __( 'unknown', 'scorefix' );
+		return array(
+			'title'    => __( 'Accessibility improvement', 'scorefix' ),
+			'business' => sprintf(
+				/* translators: %s: technical issue type key */
+				__( 'This finding type (%s) is summarized in your issues list. Review the suggested fix in the editor or theme.', 'scorefix' ),
+				$label
+			),
+			'references' => array(
+				__( 'W3C: Web Content Accessibility Guidelines (WCAG) Overview', 'scorefix' ),
+			),
+			'disclaimer' => self::disclaimer(),
+		);
+	}
+}
