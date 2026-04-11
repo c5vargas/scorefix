@@ -241,6 +241,22 @@ class IssueGlossary {
 			),
 		);
 
+		$d['seo_thin_content'] = array(
+			'title'    => __( 'Body text looks short for this post or page', 'scorefix' ),
+			'business' => __( 'Very short stored content may offer little context for readers and for search engines. This is a simple word count on the HTML we scan (not the live rendered page). Expand with useful detail where it fits your strategy.', 'scorefix' ),
+			'references' => array(
+				__( 'Google Search Central: Creating helpful, reliable, people-first content', 'scorefix' ),
+			),
+		);
+
+		$d['seo_few_internal_links'] = array(
+			'title'    => __( 'Long article links out but not to your own site', 'scorefix' ),
+			'business' => __( 'Internal links help visitors and crawlers discover related pages on your site. This rule only flags when the body is fairly long, there are multiple external links, and none point to your domain in the stored HTML.', 'scorefix' ),
+			'references' => array(
+				__( 'Google Search Central: Linking internally', 'scorefix' ),
+			),
+		);
+
 		return $d;
 	}
 

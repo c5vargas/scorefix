@@ -19,6 +19,7 @@ use ScoreFix\Scanner\Rules\LandmarksRule;
 use ScoreFix\Scanner\Rules\LinkGenericTextRule;
 use ScoreFix\Scanner\Rules\LinksRule;
 use ScoreFix\Scanner\Rules\PerformanceHeuristicRule;
+use ScoreFix\Scanner\Rules\SeoFragmentRule;
 use ScoreFix\Scanner\Rules\TablesSemanticRule;
 
 defined( 'ABSPATH' ) || exit;
@@ -58,6 +59,9 @@ class Scanner {
 		'perf_img_missing_dimensions'     => 1,
 		'perf_img_missing_lazy'          => 1,
 		'perf_many_external_scripts'     => 2,
+		// Phase 2 SEO fragment heuristics (conservative).
+		'seo_thin_content'               => 1,
+		'seo_few_internal_links'         => 1,
 	);
 
 	/**
@@ -272,6 +276,7 @@ class Scanner {
 		$issues = array_merge( $issues, EmbeddedMediaRule::collect( $xpath, $pid, $maker ) );
 		$issues = array_merge( $issues, TablesSemanticRule::collect( $xpath, $pid, $maker ) );
 		$issues = array_merge( $issues, PerformanceHeuristicRule::collect( $xpath, $pid, $maker ) );
+		$issues = array_merge( $issues, SeoFragmentRule::collect( $xpath, $pid, $maker ) );
 
 		return $issues;
 	}

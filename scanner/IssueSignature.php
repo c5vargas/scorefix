@@ -106,6 +106,12 @@ class IssueSignature {
 			case 'perf_many_external_scripts':
 				$discriminator = isset( $issue['script_src_count'] ) ? (string) (int) $issue['script_src_count'] : '';
 				break;
+			case 'seo_thin_content':
+				$discriminator = 'thin';
+				break;
+			case 'seo_few_internal_links':
+				$discriminator = 'internal-links';
+				break;
 			default:
 				$discriminator = '';
 				break;

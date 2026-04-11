@@ -583,6 +583,36 @@ class DashboardPage {
 				'value' => (string) $issue['link_text'],
 			);
 		}
+		if ( 'seo_thin_content' === $itype && isset( $issue['word_count'] ) ) {
+			$rows[] = array(
+				'key'   => 'word_count',
+				'label' => __( 'Word count (body text)', 'scorefix' ),
+				'value' => (string) (int) $issue['word_count'],
+			);
+		}
+		if ( 'seo_few_internal_links' === $itype ) {
+			if ( isset( $issue['word_count'] ) ) {
+				$rows[] = array(
+					'key'   => 'word_count',
+					'label' => __( 'Word count (body text)', 'scorefix' ),
+					'value' => (string) (int) $issue['word_count'],
+				);
+			}
+			if ( isset( $issue['internal_link_count'] ) ) {
+				$rows[] = array(
+					'key'   => 'internal_link_count',
+					'label' => __( 'Internal links (same site)', 'scorefix' ),
+					'value' => (string) (int) $issue['internal_link_count'],
+				);
+			}
+			if ( isset( $issue['external_link_count'] ) ) {
+				$rows[] = array(
+					'key'   => 'external_link_count',
+					'label' => __( 'External links (other hosts)', 'scorefix' ),
+					'value' => (string) (int) $issue['external_link_count'],
+				);
+			}
+		}
 		if ( 'form_radio_group_no_legend' === $itype && ! empty( $issue['group_name'] ) ) {
 			$rows[] = array(
 				'key'   => 'group_name',
