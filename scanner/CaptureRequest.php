@@ -1,6 +1,6 @@
 <?php
 /**
- * One-time signed capture flag for loopback HTML fetch (disables ScoreFix output mutation).
+ * One-time signed capture flag for loopback HTML fetch (hides admin bar; HTML matches visitor + automatic fixes).
  *
  * @package ScoreFix
  */
@@ -49,10 +49,6 @@ class CaptureRequest {
 		}
 
 		delete_transient( $key );
-
-		if ( ! defined( 'SCOREFIX_RENDER_CAPTURE' ) ) {
-			define( 'SCOREFIX_RENDER_CAPTURE', true );
-		}
 
 		add_filter( 'show_admin_bar', '__return_false', PHP_INT_MAX );
 	}
