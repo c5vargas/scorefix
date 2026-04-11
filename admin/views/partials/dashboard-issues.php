@@ -106,7 +106,13 @@ $scorefix_iv_pages    = isset( $scorefix_iv['pagination_html'] ) ? (string) $sco
 							$scorefix_tone       = DashboardPage::issue_severity_tone( $scorefix_issue );
 							$scorefix_sev_label  = DashboardPage::issue_severity_label( $scorefix_issue );
 							$scorefix_post_id    = isset( $scorefix_issue['post_id'] ) ? (int) $scorefix_issue['post_id'] : 0;
-							$scorefix_post_title = $scorefix_post_id ? get_the_title( $scorefix_post_id ) : '';
+							$scorefix_cap_url    = isset( $scorefix_issue['capture_url'] ) ? esc_url_raw( (string) $scorefix_issue['capture_url'] ) : '';
+							$scorefix_post_title = '';
+							if ( '' !== $scorefix_cap_url ) {
+								$scorefix_post_title = strlen( $scorefix_cap_url ) > 72 ? substr( $scorefix_cap_url, 0, 69 ) . '...' : $scorefix_cap_url;
+							} elseif ( $scorefix_post_id ) {
+								$scorefix_post_title = get_the_title( $scorefix_post_id );
+							}
 							if ( '' === $scorefix_post_title ) {
 								$scorefix_post_title = __( '(No title)', 'scorefix' );
 							}

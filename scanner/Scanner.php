@@ -115,16 +115,20 @@ class Scanner {
 
 		$score = $this->calculate_score( $issues );
 
+		$prev_for_compare = self::issues_without_rendered( $prev_issues );
+
 		$snapshot = array(
 			'score'           => $score,
 			'issues'          => $issues,
 			'scanned_at'      => gmdate( 'c' ),
 			'version'         => SCOREFIX_VERSION,
 			'posts_scanned'   => $posts_scanned,
-			'comparison'      => ScanComparison::build( $had_prior, $prev_issues, $issues ),
+			'comparison'      => ScanComparison::build( $had_prior, $prev_for_compare, $issues ),
 		);
 
 		update_option( self::OPTION_LAST_SCAN, $snapshot, false );
+
+		RenderScanQueue::start_after_sync_scan( $had_prior, $prev_issues );
 
 		return $snapshot;
 	}
@@ -207,11 +211,12 @@ class Scanner {
 	/**
 	 * Parse HTML and collect issues for one post.
 	 *
-	 * @param string $html    Post content HTML.
-	 * @param int    $post_id Post ID.
+	 * @param string        $html           Post content HTML.
+	 * @param int           $post_id        Post ID (0 for rendered URL body).
+	 * @param callable|null $issue_factory function( string $type, string $severity, array $extra ): array or null to use create_issue.
 	 * @return array<int, array<string, mixed>>
 	 */
-	public function scan_html( $html, $post_id ) {
+	public function scan_html( $html, $post_id, callable $issue_factory = null ) {
 		$issues = array();
 		if ( '' === trim( (string) $html ) ) {
 			return $issues;
@@ -225,7 +230,7 @@ class Scanner {
 
 		$xpath = new \DOMXPath( $dom );
 
-		$maker = array( $this, 'create_issue' );
+		$maker = null !== $issue_factory ? $issue_factory : array( $this, 'create_issue' );
 		$pid   = (int) $post_id;
 		$issues = array_merge( $issues, HeadingsRule::collect( $xpath, $pid, $maker ) );
 		$issues = array_merge( $issues, LandmarksRule::collect( $xpath, $pid, $maker ) );
@@ -287,6 +292,27 @@ class Scanner {
 		}
 		$penalty = min( self::PENALTY_CAP, $penalty );
 		return (int) max( 0, 100 - $penalty );
+	}
+
+	/**
+	 * Strip issues from rendered HTML pass (used when comparing post/attachment snapshot vs prior scan).
+	 *
+	 * @param array<int, array<string, mixed>> $issues Issues.
+	 * @return array<int, array<string, mixed>>
+	 */
+	protected static function issues_without_rendered( array $issues ) {
+		$out = array();
+		foreach ( $issues as $row ) {
+			if ( ! is_array( $row ) ) {
+				continue;
+			}
+			$src = isset( $row['source'] ) ? sanitize_key( (string) $row['source'] ) : '';
+			if ( 'rendered_url' === $src ) {
+				continue;
+			}
+			$out[] = $row;
+		}
+		return $out;
 	}
 
 	/**

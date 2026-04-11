@@ -30,7 +30,11 @@ class IssueSignature {
 			$snippet = isset( $issue['style_snippet'] ) ? (string) $issue['style_snippet'] : '';
 			$detail  = isset( $issue['detail'] ) ? (string) $issue['detail'] : '';
 			$hash    = md5( $hint . "\n" . $snippet . "\n" . $detail );
-			return $type . '|' . $post . '|' . $ctx . '|' . $hash;
+			$base    = $type . '|' . $post . '|' . $ctx . '|' . $hash;
+			if ( ! empty( $issue['capture_url'] ) ) {
+				$base .= '|u:' . md5( (string) $issue['capture_url'] );
+			}
+			return $base;
 		}
 
 		$discriminator = '';
@@ -100,6 +104,10 @@ class IssueSignature {
 				break;
 		}
 
-		return $type . '|' . $post . '|' . $ctx . '|' . $discriminator;
+		$base = $type . '|' . $post . '|' . $ctx . '|' . $discriminator;
+		if ( ! empty( $issue['capture_url'] ) ) {
+			$base .= '|u:' . md5( (string) $issue['capture_url'] );
+		}
+		return $base;
 	}
 }

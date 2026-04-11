@@ -69,6 +69,9 @@ class RenderHooks {
 	 * @return string
 	 */
 	public function filter_fragment( $html ) {
+		if ( defined( 'SCOREFIX_RENDER_CAPTURE' ) && SCOREFIX_RENDER_CAPTURE ) {
+			return $html;
+		}
 		if ( is_admin() ) {
 			return $html;
 		}
@@ -113,6 +116,9 @@ class RenderHooks {
 	 * @return bool
 	 */
 	protected function should_process_request() {
+		if ( defined( 'SCOREFIX_RENDER_CAPTURE' ) && SCOREFIX_RENDER_CAPTURE ) {
+			return false;
+		}
 		if ( is_admin() ) {
 			return false;
 		}

@@ -3,7 +3,7 @@
  * Plugin Name:       ScoreFix – Boost Lighthouse & Improve UX
  * Plugin URI:        https://scorefix.example
  * Description:       Fix the issues hurting your Lighthouse score and conversions in one click. No coding required.
- * Version:           1.0.1
+ * Version:           1.0.3
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            ScoreFix
@@ -17,7 +17,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'SCOREFIX_VERSION', '1.0.1' );
+define( 'SCOREFIX_VERSION', '1.0.3' );
 define( 'SCOREFIX_PLUGIN_FILE', __FILE__ );
 define( 'SCOREFIX_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SCOREFIX_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -29,4 +29,5 @@ ScoreFix\Core\Autoload::register( SCOREFIX_PLUGIN_DIR );
 
 register_activation_hook( __FILE__, array( 'ScoreFix\Core\Plugin', 'activate' ) );
 
+add_action( 'plugins_loaded', array( 'ScoreFix\Scanner\CaptureRequest', 'bootstrap' ), 2 );
 add_action( 'plugins_loaded', array( 'ScoreFix\Core\Plugin', 'init' ), 5 );

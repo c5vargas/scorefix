@@ -438,6 +438,9 @@ class DashboardPage {
 		if ( 'attachment' === $src ) {
 			return __( 'Media library', 'scorefix' );
 		}
+		if ( 'rendered_url' === $src ) {
+			return __( 'Rendered page (public HTML)', 'scorefix' );
+		}
 		$ctx = isset( $issue['context'] ) ? sanitize_text_field( (string) $issue['context'] ) : '';
 		if ( '' === $ctx ) {
 			return __( 'Post / page content', 'scorefix' );
@@ -623,6 +626,13 @@ class DashboardPage {
 				'value' => (string) (int) $issue['table_ordinal'],
 			);
 		}
+		if ( ! empty( $issue['capture_url'] ) ) {
+			$rows[] = array(
+				'key'   => 'capture_url',
+				'label' => __( 'Scanned URL', 'scorefix' ),
+				'value' => (string) $issue['capture_url'],
+			);
+		}
 
 		return $rows;
 	}
@@ -636,6 +646,22 @@ class DashboardPage {
 	public static function issue_row_actions( array $issue ) {
 		$post_id = isset( $issue['post_id'] ) ? (int) $issue['post_id'] : 0;
 		$actions = array();
+
+		if ( ! empty( $issue['capture_url'] ) && is_string( $issue['capture_url'] ) ) {
+			$capture = esc_url_raw( $issue['capture_url'] );
+			if ( '' !== $capture ) {
+				$actions['view_capture'] = array(
+					'label' => __( 'Open scanned URL', 'scorefix' ),
+					'title' => __( 'Open this URL on the live site (new tab)', 'scorefix' ),
+					'icon'  => 'dashicons-admin-site-alt3',
+					'url'   => $capture,
+					'attrs' => array(
+						'target' => '_blank',
+						'rel'    => 'noopener noreferrer',
+					),
+				);
+			}
+		}
 
 		if ( $post_id && current_user_can( 'edit_post', $post_id ) ) {
 			$url = get_edit_post_link( $post_id, 'raw' );

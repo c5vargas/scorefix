@@ -21,6 +21,9 @@ class FixEngine {
 	 * @return string
 	 */
 	public function process_content( $content ) {
+		if ( defined( 'SCOREFIX_RENDER_CAPTURE' ) && SCOREFIX_RENDER_CAPTURE ) {
+			return $content;
+		}
 		if ( '' === trim( (string) $content ) ) {
 			return $content;
 		}
@@ -416,6 +419,9 @@ class FixEngine {
 	 * @return array<string, string>
 	 */
 	public function filter_attachment_image_attributes( $attr, $attachment ) {
+		if ( defined( 'SCOREFIX_RENDER_CAPTURE' ) && SCOREFIX_RENDER_CAPTURE ) {
+			return $attr;
+		}
 		if ( empty( $attr['alt'] ) ) {
 			$attr['alt'] = self::fallback_alt_for_attachment( (int) $attachment->ID );
 			$this->bump_stat( 'img_alt_attr' );

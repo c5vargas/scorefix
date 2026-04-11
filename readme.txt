@@ -4,7 +4,7 @@ Tags: lighthouse, accessibility, performance, SEO, WooCommerce
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.0.1
+Stable tag: 1.0.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -65,6 +65,12 @@ No. ScoreFix does not rely on overlays to fake compliance.
 1. ScoreFix dashboard with score, issues, and actions.
 
 == Changelog ==
+
+= 1.0.3 =
+* Rendered HTML scan: always part of a full scan. Background queue (WP-Cron + opening ScoreFix settings) uses built-in limits (`RenderCaptureConfig`: timeout, max URLs, batch size) and URL list from defaults + published posts/pages/products; merges `rendered_url` when done. No dashboard UI for capture tuning. Filter `scorefix_skip_render_url_scan` for edge cases.
+
+= 1.0.2 =
+* Scanner: optional same-host loopback fetch of rendered public HTML (signed one-time token), merged into scan with source `rendered_url`. Settings UI for URLs, timeout, max URLs. Filter `scorefix_render_capture_sslverify` for local dev TLS.
 
 = 1.0.1 =
 * Scanner: additional DOM heuristics (headings, landmarks, generic link text, form groups/autocomplete/required hints, video/audio/iframe, data tables). Heuristic only — not a WCAG guarantee.
