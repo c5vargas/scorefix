@@ -21,6 +21,9 @@ use ScoreFix\Admin\DashboardPage;
 		<div class="scorefix-performance__intro">
 			<p class="scorefix-performance__headline" role="heading" aria-level="2"><?php echo esc_html( $perf_copy['headline'] ); ?></p>
 			<p class="scorefix-performance__sub"><?php echo esc_html( $perf_copy['sub'] ); ?></p>
+			<p class="scorefix-performance__note scorefix-muted">
+				<?php esc_html_e( 'The overall score blends accessibility, SEO, and local performance signals from your content. Rendered-URL issues and heavy lab metrics are out of scope here—use PSI or your host for deep speed work.', 'scorefix' ); ?>
+			</p>
 		</div>
 		<div class="scorefix-donut-wrap">
 			<?php

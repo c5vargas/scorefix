@@ -343,6 +343,9 @@ class Scanner {
 	 * weighted penalties across all issue rows (so large issue counts cannot hide behind “mostly clean pages”).
 	 * Legacy snapshots omit context → linear sum model.
 	 *
+	 * Unknown `issue_type` keys fall back to a small default penalty via {@see penalty_for_issue()}; add explicit
+	 * {@see self::PENALTY} entries for new rules so weighting stays intentional.
+	 *
 	 * @param array<int, array<string, mixed>>       $issues  Issues.
 	 * @param array<string, mixed>                   $context Optional. Keys: `scanned_post_ids` int[], `scanned_attachment_ids` int[].
 	 * @return int
@@ -588,7 +591,10 @@ class Scanner {
 	}
 
 	/**
-	 * Strip issues from rendered HTML pass (used when comparing post/attachment snapshot vs prior scan).
+	 * Strip issues from rendered HTML pass (used when comparing sync-scan snapshot vs prior scan).
+	 *
+	 * `source: rendered_url` issues arrive asynchronously; excluding them keeps ScanComparison deltas stable until
+	 * the render queue finishes. Same PENALTY weights apply once those rows exist.
 	 *
 	 * @param array<int, array<string, mixed>> $issues Issues.
 	 * @return array<int, array<string, mixed>>

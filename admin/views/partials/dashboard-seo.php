@@ -22,6 +22,9 @@ $scorefix_meta_description_on = ! array_key_exists( 'meta_description_enabled', 
 	<p class="scorefix-seo__lead scorefix-muted">
 		<?php esc_html_e( 'Optional outputs that support search snippets without replacing a full SEO plugin.', 'scorefix' ); ?>
 	</p>
+	<p class="scorefix-seo__bridge scorefix-muted">
+		<?php esc_html_e( 'Speed and UX support SEO indirectly (for example Core Web Vitals and how people experience the page). ScoreFix adds light HTML performance checks—many scripts, image hints—next to SEO audits; it is not a PageSpeed Insights or CrUX substitute.', 'scorefix' ); ?>
+	</p>
 
 	<form method="post" class="scorefix-seo-form">
 		<?php wp_nonce_field( ActionsController::ACTION_SAVE_META_DESC ); ?>

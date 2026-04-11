@@ -443,6 +443,13 @@
 	color: var(--scorefix-slate-500);
 }
 
+.scorefix-performance__note {
+	margin: 14px 0 0;
+	font-size: 13px;
+	line-height: 1.5;
+	color: var(--scorefix-slate-500);
+}
+
 .scorefix-donut-wrap {
 	flex-shrink: 0;
 	display: flex;
@@ -879,6 +886,13 @@
 .scorefix-reminders__lead,
 .scorefix-seo__lead {
 	margin: 0 0 18px;
+	font-size: 13px;
+	line-height: 1.5;
+	max-width: none;
+}
+
+.scorefix-seo__bridge {
+	margin: -6px 0 18px;
 	font-size: 13px;
 	line-height: 1.5;
 	max-width: none;
