@@ -101,14 +101,6 @@ class DashboardPage {
 
 		$scorefix_issues_view = self::build_issues_table_view( $issues );
 
-		$scorefix_score_hint = '';
-		if ( is_array( $scan ) && isset( $scan['score_model'] ) ) {
-			$sm = (string) $scan['score_model'];
-			if ( 0 === strpos( $sm, 'per_page_average' ) ) {
-				$scorefix_score_hint = __( 'The overall score is the average of: each scanned page (0–100 from its editor HTML), one combined result for the whole media library scan, and each rendered URL in the scan. With automatic fixes on, the scan analyses the same processed HTML the plugin outputs, so fewer issues are detected and the score can rise.', 'scorefix' );
-			}
-		}
-
 		include SCOREFIX_PLUGIN_DIR . 'admin/views/dashboard.php';
 	}
 

@@ -8,16 +8,11 @@
  * @var array<string, string> $perf_copy
  * @var array<string, mixed>  $metrics
  * @var bool                  $show_metric_trend_hint Required by metric-cards partial.
- * @var string                $scorefix_score_hint    Optional muted line explaining score model.
  */
 
 defined( 'ABSPATH' ) || exit;
 
 use ScoreFix\Admin\DashboardPage;
-
-if ( ! isset( $scorefix_score_hint ) ) {
-	$scorefix_score_hint = '';
-}
 
 ?>
 <div class="scorefix-card scorefix-card--performance">
@@ -54,9 +49,6 @@ if ( ! isset( $scorefix_score_hint ) ) {
 					<span class="scorefix-donut__label"><?php esc_html_e( 'Overall score', 'scorefix' ); ?></span>
 				</div>
 			</div>
-			<?php if ( '' !== $scorefix_score_hint ) : ?>
-				<p class="scorefix-performance__score-hint scorefix-muted"><?php echo esc_html( $scorefix_score_hint ); ?></p>
-			<?php endif; ?>
 		</div>
 	</div>
 
