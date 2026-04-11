@@ -4,7 +4,7 @@ Tags: lighthouse, accessibility, performance, SEO, WooCommerce
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.0.4
+Stable tag: 1.0.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -65,6 +65,12 @@ No. ScoreFix does not rely on overlays to fake compliance.
 1. ScoreFix dashboard with score, issues, and actions.
 
 == Changelog ==
+
+= 1.0.6 =
+* Score: media library is **one** bucket (sum of attachment-issue penalties capped at 100), not one bucket per image file — prevents hundreds of “clean” attachments from inflating the overall average when posts still have many issues. Model id `per_page_average_v2`.
+
+= 1.0.5 =
+* Score: new default model `per_page_average_v1` — each scanned post, each scanned image attachment, and each distinct rendered URL gets an internal 0–100 from its issues (penalties capped per bucket); the dashboard “Overall score” is the **average** of those values (still shown as 0–100). Old snapshots without `scanned_post_ids` keep the previous single-sum behaviour. Filters: `scorefix_score_context`, `scorefix_calculated_score`.
 
 = 1.0.4 =
 * Scanner (Phase 5A): local performance heuristics on scanned HTML — images missing width/height (attrs or inline style), `loading="lazy"` suggestion with conservative main/first-block heuristic, and high count of `<script src>`. New issue types `perf_*`; glossary + dashboard context “Performance (HTML heuristic)”. Filters: `scorefix_collect_performance_heuristics`, `scorefix_perf_script_src_threshold`.

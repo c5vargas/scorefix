@@ -360,6 +360,17 @@
 
 .scorefix-donut-wrap {
 	flex-shrink: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+.scorefix-performance__score-hint {
+	margin: 12px 0 0;
+	max-width: 16rem;
+	font-size: 12px;
+	line-height: 1.45;
+	text-align: center;
 }
 
 .scorefix-donut {

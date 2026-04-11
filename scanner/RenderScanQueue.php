@@ -257,7 +257,15 @@ class RenderScanQueue {
 		}
 
 		$merged = array_merge( $base, $render_issues );
-		$score  = ( new Scanner() )->calculate_score( $merged );
+
+		$score_context = array();
+		if ( isset( $scan['scanned_post_ids'] ) && is_array( $scan['scanned_post_ids'] ) ) {
+			$score_context['scanned_post_ids'] = $scan['scanned_post_ids'];
+		}
+		if ( isset( $scan['scanned_attachment_ids'] ) && is_array( $scan['scanned_attachment_ids'] ) ) {
+			$score_context['scanned_attachment_ids'] = $scan['scanned_attachment_ids'];
+		}
+		$score = ( new Scanner() )->calculate_score( $merged, $score_context );
 
 		$had_prior = ! empty( $queue['had_prior_scan'] );
 		$prev      = isset( $queue['prev_issues'] ) && is_array( $queue['prev_issues'] ) ? $queue['prev_issues'] : array();

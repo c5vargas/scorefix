@@ -103,32 +103,43 @@ class Scanner {
 			)
 		);
 
-		$posts_scanned = 0;
+		$posts_scanned     = 0;
+		$scanned_post_ids = array();
 		if ( $query->have_posts() ) {
 			while ( $query->have_posts() ) {
 				$query->the_post();
 				++$posts_scanned;
 				$post_id = get_the_ID();
-				$html    = $this->prepare_html_for_scan( get_post_field( 'post_content', $post_id ) );
-				$issues  = array_merge( $issues, $this->scan_html( $html, $post_id ) );
+				$scanned_post_ids[] = (int) $post_id;
+				$html               = $this->prepare_html_for_scan( get_post_field( 'post_content', $post_id ) );
+				$issues             = array_merge( $issues, $this->scan_html( $html, $post_id ) );
 			}
 			wp_reset_postdata();
 		}
 
-		$attachment_issues = $this->scan_attachment_images();
-		$issues            = array_merge( $issues, $attachment_issues );
+		$attachment_result  = $this->scan_attachment_images();
+		$attachment_issues  = $attachment_result['issues'];
+		$scanned_attachment_ids = $attachment_result['ids'];
+		$issues               = array_merge( $issues, $attachment_issues );
 
-		$score = $this->calculate_score( $issues );
+		$score_context = array(
+			'scanned_post_ids'       => $scanned_post_ids,
+			'scanned_attachment_ids' => $scanned_attachment_ids,
+		);
+		$score         = $this->calculate_score( $issues, $score_context );
 
 		$prev_for_compare = self::issues_without_rendered( $prev_issues );
 
 		$snapshot = array(
-			'score'           => $score,
-			'issues'          => $issues,
-			'scanned_at'      => gmdate( 'c' ),
-			'version'         => SCOREFIX_VERSION,
-			'posts_scanned'   => $posts_scanned,
-			'comparison'      => ScanComparison::build( $had_prior, $prev_for_compare, $issues ),
+			'score'                  => $score,
+			'issues'                 => $issues,
+			'scanned_at'             => gmdate( 'c' ),
+			'version'                => SCOREFIX_VERSION,
+			'posts_scanned'          => $posts_scanned,
+			'scanned_post_ids'       => $scanned_post_ids,
+			'scanned_attachment_ids' => $scanned_attachment_ids,
+			'score_model'            => 'per_page_average_v2',
+			'comparison'             => ScanComparison::build( $had_prior, $prev_for_compare, $issues ),
 		);
 
 		update_option( self::OPTION_LAST_SCAN, $snapshot, false );
@@ -173,14 +184,10 @@ class Scanner {
 	/**
 	 * Scan attachment library for images missing alt text.
 	 *
-	 * @return array<int, array<string, mixed>>
+	 * @return array{issues: array<int, array<string, mixed>>, ids: array<int, int>}
 	 */
 	protected function scan_attachment_images() {
 		$issues = array();
-		if ( $this->fixes_enabled() ) {
-			// Runtime fills missing alt via wp_get_attachment_image_attributes; do not penalise DB meta.
-			return $issues;
-		}
 		$q      = new \WP_Query(
 			array(
 				'post_type'      => 'attachment',
@@ -192,7 +199,20 @@ class Scanner {
 			)
 		);
 
-		foreach ( $q->posts as $att_id ) {
+		$ids = array();
+		foreach ( is_array( $q->posts ) ? $q->posts : array() as $att_id ) {
+			$ids[] = (int) $att_id;
+		}
+
+		if ( $this->fixes_enabled() ) {
+			// Runtime fills missing alt via wp_get_attachment_image_attributes; do not penalise DB meta.
+			return array(
+				'issues' => array(),
+				'ids'    => $ids,
+			);
+		}
+
+		foreach ( $ids as $att_id ) {
 			$alt = get_post_meta( $att_id, '_wp_attachment_image_alt', true );
 			$alt = is_string( $alt ) ? trim( $alt ) : '';
 			if ( '' === $alt ) {
@@ -200,17 +220,20 @@ class Scanner {
 					'image_no_alt',
 					'high',
 					array(
-						'post_id'   => (int) $att_id,
-						'context'   => 'media_library',
-						'title'     => get_the_title( $att_id ),
-						'impact'    => 'business',
-						'source'    => 'attachment',
+						'post_id' => (int) $att_id,
+						'context' => 'media_library',
+						'title'   => get_the_title( $att_id ),
+						'impact'  => 'business',
+						'source'  => 'attachment',
 					)
 				);
 			}
 		}
 
-		return $issues;
+		return array(
+			'issues' => $issues,
+			'ids'    => $ids,
+		);
 	}
 
 	/**
@@ -286,18 +309,193 @@ class Scanner {
 	/**
 	 * Calculate ScoreFix Score from issues.
 	 *
+	 * With {@see $context} `scanned_post_ids` (from last full scan), uses **per-bucket average**:
+	 * each published post scanned = one bucket (0–100 from its non-attachment, non-rendered issues),
+	 * the **whole media-library pass** = one bucket (sum of all attachment-source penalties, capped),
+	 * each distinct rendered URL = one bucket.
+	 * Final score = round( average of those subscores ). Legacy snapshots omit context → linear sum model.
+	 *
+	 * @param array<int, array<string, mixed>>       $issues  Issues.
+	 * @param array<string, mixed>                   $context Optional. Keys: `scanned_post_ids` int[], `scanned_attachment_ids` int[].
+	 * @return int
+	 */
+	public function calculate_score( array $issues, array $context = array() ) {
+		$context = apply_filters( 'scorefix_score_context', $context, $issues );
+
+		if ( ! isset( $context['scanned_post_ids'] ) || ! is_array( $context['scanned_post_ids'] ) ) {
+			$linear = $this->calculate_score_linear( $issues );
+			return (int) apply_filters( 'scorefix_calculated_score', $linear, $issues, $context );
+		}
+
+		$post_ids = array_values(
+			array_unique(
+				array_filter(
+					array_map(
+						static function ( $id ) {
+							return (int) $id > 0 ? (int) $id : 0;
+						},
+						$context['scanned_post_ids']
+					)
+				)
+			)
+		);
+
+		$att_ids = array();
+		if ( isset( $context['scanned_attachment_ids'] ) && is_array( $context['scanned_attachment_ids'] ) ) {
+			$att_ids = array_values(
+				array_unique(
+					array_filter(
+						array_map(
+							static function ( $id ) {
+								return (int) $id > 0 ? (int) $id : 0;
+							},
+							$context['scanned_attachment_ids']
+						)
+					)
+				)
+			);
+		}
+
+		$sum = 0.0;
+		$cnt = 0;
+
+		foreach ( $post_ids as $pid ) {
+			$p = $this->sum_penalties_for_post_content_bucket( $issues, $pid );
+			$sum += (float) max( 0, 100 - min( self::PENALTY_CAP, $p ) );
+			++$cnt;
+		}
+
+		if ( ! empty( $att_ids ) ) {
+			$p = $this->sum_penalties_media_library_bucket( $issues );
+			$sum += (float) max( 0, 100 - min( self::PENALTY_CAP, $p ) );
+			++$cnt;
+		}
+
+		$render_urls = array();
+		foreach ( $issues as $iss ) {
+			if ( ! is_array( $iss ) ) {
+				continue;
+			}
+			$src = isset( $iss['source'] ) ? sanitize_key( (string) $iss['source'] ) : '';
+			if ( 'rendered_url' !== $src ) {
+				continue;
+			}
+			$u = isset( $iss['capture_url'] ) ? esc_url_raw( (string) $iss['capture_url'] ) : '';
+			if ( '' !== $u ) {
+				$render_urls[ $u ] = true;
+			}
+		}
+		foreach ( array_keys( $render_urls ) as $url ) {
+			$p = $this->sum_penalties_for_render_url_bucket( $issues, $url );
+			$sum += (float) max( 0, 100 - min( self::PENALTY_CAP, $p ) );
+			++$cnt;
+		}
+
+		if ( $cnt < 1 ) {
+			$linear = $this->calculate_score_linear( $issues );
+			return (int) apply_filters( 'scorefix_calculated_score', $linear, $issues, $context );
+		}
+
+		$score = (int) max( 0, min( 100, (int) round( $sum / $cnt ) ) );
+		return (int) apply_filters( 'scorefix_calculated_score', $score, $issues, $context );
+	}
+
+	/**
+	 * Legacy: single global penalty cap (used when scan context is missing, e.g. old snapshots).
+	 *
 	 * @param array<int, array<string, mixed>> $issues Issues.
 	 * @return int
 	 */
-	public function calculate_score( array $issues ) {
+	protected function calculate_score_linear( array $issues ) {
 		$penalty = 0;
 		foreach ( $issues as $issue ) {
-			$type = isset( $issue['type'] ) ? (string) $issue['type'] : '';
-			$p    = isset( self::PENALTY[ $type ] ) ? (int) self::PENALTY[ $type ] : 2;
-			$penalty += $p;
+			if ( ! is_array( $issue ) ) {
+				continue;
+			}
+			$penalty += $this->penalty_for_issue( $issue );
 		}
 		$penalty = min( self::PENALTY_CAP, $penalty );
 		return (int) max( 0, 100 - $penalty );
+	}
+
+	/**
+	 * @param array<string, mixed> $issue Issue row.
+	 * @return int
+	 */
+	protected function penalty_for_issue( array $issue ) {
+		$type = isset( $issue['type'] ) ? (string) $issue['type'] : '';
+		return isset( self::PENALTY[ $type ] ) ? (int) self::PENALTY[ $type ] : 2;
+	}
+
+	/**
+	 * Penalties for issues tied to a post's stored content (not attachment, not rendered URL pass).
+	 *
+	 * @param array<int, array<string, mixed>> $issues All issues.
+	 * @param int                              $post_id Post ID.
+	 * @return int
+	 */
+	protected function sum_penalties_for_post_content_bucket( array $issues, $post_id ) {
+		$post_id = (int) $post_id;
+		$p       = 0;
+		foreach ( $issues as $issue ) {
+			if ( ! is_array( $issue ) ) {
+				continue;
+			}
+			if ( (int) ( $issue['post_id'] ?? 0 ) !== $post_id ) {
+				continue;
+			}
+			$src = isset( $issue['source'] ) ? sanitize_key( (string) $issue['source'] ) : 'post_content';
+			if ( 'attachment' === $src || 'rendered_url' === $src ) {
+				continue;
+			}
+			$p += $this->penalty_for_issue( $issue );
+		}
+		return $p;
+	}
+
+	/**
+	 * Sum penalties for all attachment-library issues (single score bucket so hundreds of clean files do not inflate the average).
+	 *
+	 * @param array<int, array<string, mixed>> $issues All issues.
+	 * @return int
+	 */
+	protected function sum_penalties_media_library_bucket( array $issues ) {
+		$p = 0;
+		foreach ( $issues as $issue ) {
+			if ( ! is_array( $issue ) ) {
+				continue;
+			}
+			$src = isset( $issue['source'] ) ? sanitize_key( (string) $issue['source'] ) : '';
+			if ( 'attachment' !== $src ) {
+				continue;
+			}
+			$p += $this->penalty_for_issue( $issue );
+		}
+		return $p;
+	}
+
+	/**
+	 * @param array<int, array<string, mixed>> $issues All issues.
+	 * @param string                           $url    Normalized capture URL.
+	 * @return int
+	 */
+	protected function sum_penalties_for_render_url_bucket( array $issues, $url ) {
+		$p = 0;
+		foreach ( $issues as $issue ) {
+			if ( ! is_array( $issue ) ) {
+				continue;
+			}
+			$src = isset( $issue['source'] ) ? sanitize_key( (string) $issue['source'] ) : '';
+			if ( 'rendered_url' !== $src ) {
+				continue;
+			}
+			$u = isset( $issue['capture_url'] ) ? esc_url_raw( (string) $issue['capture_url'] ) : '';
+			if ( $u !== $url ) {
+				continue;
+			}
+			$p += $this->penalty_for_issue( $issue );
+		}
+		return $p;
 	}
 
 	/**
