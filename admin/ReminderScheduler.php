@@ -21,7 +21,7 @@ class ReminderScheduler {
 	const NONCE_DISMISS = 'scorefix_reminder_dismiss';
 
 	/** @var string */
-	const SETTINGS_SCREEN_ID = 'settings_page_scorefix';
+	const SETTINGS_SCREEN_ID = 'toplevel_page_scorefix';
 
 	/**
 	 * Register hooks.
@@ -77,7 +77,7 @@ class ReminderScheduler {
 		}
 
 		$subject = __( 'ScoreFix: time for a quick site check', 'scorefix' );
-		$url     = admin_url( 'options-general.php?page=scorefix' );
+		$url     = admin_url( 'admin.php?page=scorefix' );
 		$site    = wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES );
 
 		$body = self::build_reminder_email_html( $site, $url );
@@ -177,7 +177,7 @@ class ReminderScheduler {
 				admin_url( 'admin.php?scorefix_reminder_dismiss=1' ),
 				self::NONCE_DISMISS
 			),
-			'scan'    => admin_url( 'options-general.php?page=scorefix' ),
+			'scan'    => admin_url( 'admin.php?page=scorefix' ),
 		);
 	}
 

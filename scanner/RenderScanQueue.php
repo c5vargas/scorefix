@@ -34,7 +34,7 @@ class RenderScanQueue {
 	 */
 	public static function register( $loader ) {
 		$loader->add_action( self::CRON_HOOK, __CLASS__, 'process_tick', 10, 0 );
-		$loader->add_action( 'load-settings_page_scorefix', __CLASS__, 'maybe_tick_on_dashboard', 5, 0 );
+		$loader->add_action( 'load-toplevel_page_scorefix', __CLASS__, 'maybe_tick_on_dashboard', 5, 0 );
 	}
 
 	/**
@@ -271,12 +271,15 @@ class RenderScanQueue {
 		}
 		if ( is_admin() && current_user_can( 'manage_options' ) ) {
 			// Prefer hook context: $GLOBALS['pagenow'] is not always set early on all hosts.
-			if ( function_exists( 'doing_action' ) && doing_action( 'load-settings_page_scorefix' ) ) {
+			if ( function_exists( 'doing_action' ) && doing_action( 'load-toplevel_page_scorefix' ) ) {
 				return true;
 			}
 			$hook = isset( $GLOBALS['pagenow'] ) ? (string) $GLOBALS['pagenow'] : '';
-			if ( 'options-general.php' === $hook || 'settings.php' === $hook ) {
-				return true;
+			if ( 'admin.php' === $hook ) {
+				$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
+				if ( 'scorefix' === $page ) {
+					return true;
+				}
 			}
 		}
 		return false;

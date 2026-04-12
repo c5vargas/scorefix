@@ -115,7 +115,7 @@ class ActionsController {
 				'page' => 'scorefix',
 				$key   => $value,
 			),
-			admin_url( 'options-general.php' )
+			admin_url( 'admin.php' )
 		);
 		wp_safe_redirect( $url );
 		exit;

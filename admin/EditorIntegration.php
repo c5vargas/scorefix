@@ -129,7 +129,7 @@ class EditorIntegration {
 				'site_score'      => is_array( $scan ) && isset( $scan['score'] ) ? (int) $scan['score'] : null,
 				'fixes_enabled'   => Plugin::fixes_enabled(),
 				'issues'          => $rows,
-				'dashboard_url'   => admin_url( 'options-general.php?page=scorefix' ),
+				'dashboard_url'   => admin_url( 'admin.php?page=scorefix' ),
 			),
 			200
 		);
@@ -168,7 +168,7 @@ class EditorIntegration {
 			'scorefix-block-editor',
 			'scorefixEditor',
 			array(
-				'dashboardUrl'  => admin_url( 'options-general.php?page=scorefix' ),
+				'dashboardUrl'  => admin_url( 'admin.php?page=scorefix' ),
 				'i18n'          => array(
 					'panelTitle'       => __( 'ScoreFix', 'scorefix' ),
 					'panelDescription' => __( 'Issues from the last site scan for this item.', 'scorefix' ),

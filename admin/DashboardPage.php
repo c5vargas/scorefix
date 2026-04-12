@@ -35,12 +35,14 @@ class DashboardPage {
 	 * @return void
 	 */
 	public function register_menu() {
-		add_options_page(
+		add_menu_page(
 			__( 'ScoreFix', 'scorefix' ),
 			__( 'ScoreFix', 'scorefix' ),
 			'manage_options',
 			'scorefix',
-			array( $this, 'render_page' )
+			array( $this, 'render_page' ),
+			'dashicons-chart-line',
+			59
 		);
 	}
 
@@ -67,7 +69,7 @@ class DashboardPage {
 	 * @return void
 	 */
 	public function enqueue_assets( $hook_suffix ) {
-		if ( 'settings_page_scorefix' !== $hook_suffix ) {
+		if ( 'toplevel_page_scorefix' !== $hook_suffix ) {
 			return;
 		}
 		wp_enqueue_style( 'dashicons' );
@@ -550,7 +552,7 @@ class DashboardPage {
 	 * @return string
 	 */
 	public static function issues_paginate_links( $current, $total_pages, $filter, $family = '' ) {
-		$base = admin_url( 'options-general.php?page=scorefix' );
+		$base = admin_url( 'admin.php?page=scorefix' );
 		if ( '' !== $filter ) {
 			$base = add_query_arg( 'sf_issue_filter', $filter, $base );
 		}
@@ -1154,7 +1156,7 @@ class DashboardPage {
 		if ( '' !== $fam ) {
 			$args['sf_issue_family'] = $fam;
 		}
-		return add_query_arg( $args, admin_url( 'options-general.php' ) );
+		return add_query_arg( $args, admin_url( 'admin.php' ) );
 	}
 
 	/**
@@ -1175,7 +1177,7 @@ class DashboardPage {
 		if ( '' !== $family ) {
 			$args['sf_issue_family'] = $family;
 		}
-		return add_query_arg( $args, admin_url( 'options-general.php' ) );
+		return add_query_arg( $args, admin_url( 'admin.php' ) );
 	}
 
 	/**
