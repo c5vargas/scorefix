@@ -32,6 +32,28 @@ class EditorIntegration {
 		$loader->add_action( 'enqueue_block_editor_assets', $this, 'enqueue_block_editor_assets', 10, 0 );
 		$loader->add_action( 'admin_enqueue_scripts', $this, 'enqueue_media_alt_notice_assets', 20, 1 );
 		$loader->add_filter( 'attachment_fields_to_edit', $this, 'attachment_fields_alt_notice', 15, 2 );
+		$loader->add_action( 'save_post', $this, 'maybe_refresh_last_scan_for_post', 30, 1 );
+	}
+
+	/**
+	 * Re-merge stored-content issues for this post into the last scan snapshot (editor panel stays current).
+	 *
+	 * @param int $post_id Post ID.
+	 * @return void
+	 */
+	public function maybe_refresh_last_scan_for_post( $post_id ) {
+		$post_id = (int) $post_id;
+		if ( $post_id <= 0 ) {
+			return;
+		}
+		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+			return;
+		}
+		if ( wp_is_post_autosave( $post_id ) || wp_is_post_revision( $post_id ) ) {
+			return;
+		}
+
+		( new Scanner() )->refresh_post_content_in_last_snapshot( $post_id );
 	}
 
 	/**
@@ -79,6 +101,10 @@ class EditorIntegration {
 		$post_id = (int) $request['id'];
 		$scan    = Scanner::get_last_scan();
 		$issues  = Scanner::get_issues_for_post_id( $post_id );
+		$was_in  = Scanner::was_in_last_scan_scope( $post_id );
+		if ( ! $was_in && ! empty( $issues ) ) {
+			$was_in = true;
+		}
 		$rows    = array();
 		foreach ( $issues as $issue ) {
 			if ( ! is_array( $issue ) ) {
@@ -99,7 +125,7 @@ class EditorIntegration {
 		return new WP_REST_Response(
 			array(
 				'scanned_at'      => is_array( $scan ) && isset( $scan['scanned_at'] ) ? (string) $scan['scanned_at'] : '',
-				'was_in_scan'     => Scanner::was_in_last_scan_scope( $post_id ),
+				'was_in_scan'     => $was_in,
 				'site_score'      => is_array( $scan ) && isset( $scan['score'] ) ? (int) $scan['score'] : null,
 				'fixes_enabled'   => Plugin::fixes_enabled(),
 				'issues'          => $rows,

@@ -273,7 +273,7 @@ class JsonLdSeoRule {
 		if ( '' === $t ) {
 			return '';
 		}
-		if ( preg_match( '#schema\.org/([^/\s#]+)#i', $t, $m ) ) {
+		if ( preg_match( '~schema\.org/([^/\s#]+)~i', $t, $m ) ) {
 			return strtolower( $m[1] );
 		}
 		if ( false !== strpos( $t, ':' ) ) {

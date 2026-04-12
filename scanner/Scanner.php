@@ -83,7 +83,7 @@ class Scanner {
 	/**
 	 * Cumulative weighted penalty scale for the global volume component (higher = more issues needed to tank score).
 	 */
-	const SCORE_VOLUME_SCALE = 235;
+	const SCORE_VOLUME_SCALE = 400;
 
 	/**
 	 * Weight of per-bucket average in final score; remainder comes from global volume (0–1).
@@ -546,11 +546,7 @@ class Scanner {
 			if ( ! is_array( $issue ) ) {
 				continue;
 			}
-			if ( (int) ( $issue['post_id'] ?? 0 ) !== $post_id ) {
-				continue;
-			}
-			$src = isset( $issue['source'] ) ? sanitize_key( (string) $issue['source'] ) : 'post_content';
-			if ( 'attachment' === $src || 'rendered_url' === $src ) {
+			if ( ! self::issue_is_post_content_bucket_row( $issue, $post_id ) ) {
 				continue;
 			}
 			$p += $this->penalty_for_issue( $issue );
@@ -693,5 +689,103 @@ class Scanner {
 			? $scan['scanned_post_ids']
 			: array();
 		return in_array( $post_id, array_map( 'intval', $ids ), true );
+	}
+
+	/**
+	 * Whether an issue row is counted in the stored-content score bucket for this post (not attachment / rendered URL).
+	 *
+	 * @param array<string, mixed> $issue   Issue row.
+	 * @param int                  $post_id Post ID.
+	 * @return bool
+	 */
+	public static function issue_is_post_content_bucket_row( array $issue, $post_id ) {
+		$post_id = (int) $post_id;
+		if ( $post_id <= 0 ) {
+			return false;
+		}
+		if ( (int) ( $issue['post_id'] ?? 0 ) !== $post_id ) {
+			return false;
+		}
+		$src = isset( $issue['source'] ) ? sanitize_key( (string) $issue['source'] ) : 'post_content';
+		if ( 'attachment' === $src || 'rendered_url' === $src ) {
+			return false;
+		}
+		return true;
+	}
+
+	/**
+	 * After publish/update: drop stored-content issues for this post, re-scan post_content, merge, rescore.
+	 * Does not touch rendered_url rows or attachment-library rows. No-op if there is no last scan snapshot.
+	 *
+	 * @param int $post_id Post ID.
+	 * @return bool True if option was updated.
+	 */
+	public function refresh_post_content_in_last_snapshot( $post_id ) {
+		$post_id = (int) $post_id;
+		if ( $post_id <= 0 ) {
+			return false;
+		}
+
+		$post = get_post( $post_id );
+		if ( ! $post instanceof \WP_Post ) {
+			return false;
+		}
+
+		$post_types = apply_filters( 'scorefix_scan_post_types', array( 'post', 'page', 'product' ) );
+		$post_types = array_values( array_filter( array_map( 'sanitize_key', (array) $post_types ) ) );
+		if ( empty( $post_types ) ) {
+			$post_types = array( 'post', 'page' );
+		}
+		if ( ! in_array( $post->post_type, $post_types, true ) ) {
+			return false;
+		}
+
+		if ( 'publish' !== $post->post_status && 'private' !== $post->post_status ) {
+			return false;
+		}
+
+		$scan = self::get_last_scan();
+		if ( ! is_array( $scan ) || empty( $scan['issues'] ) || ! is_array( $scan['issues'] ) ) {
+			return false;
+		}
+
+		$kept = array();
+		foreach ( $scan['issues'] as $row ) {
+			if ( ! is_array( $row ) ) {
+				continue;
+			}
+			if ( self::issue_is_post_content_bucket_row( $row, $post_id ) ) {
+				continue;
+			}
+			$kept[] = $row;
+		}
+
+		$html = $this->prepare_html_for_scan( get_post_field( 'post_content', $post_id ) );
+		$new  = $this->scan_html( $html, $post_id );
+		$merged = array_merge( $kept, $new );
+
+		if ( isset( $scan['scanned_post_ids'] ) && is_array( $scan['scanned_post_ids'] ) ) {
+			$ids = array_map( 'intval', $scan['scanned_post_ids'] );
+			if ( ! in_array( $post_id, $ids, true ) ) {
+				$scan['scanned_post_ids'] = array_values( array_unique( array_merge( $ids, array( $post_id ) ) ) );
+			}
+		}
+
+		$score_context = array();
+		if ( isset( $scan['scanned_post_ids'] ) && is_array( $scan['scanned_post_ids'] ) ) {
+			$score_context['scanned_post_ids'] = $scan['scanned_post_ids'];
+		}
+		if ( isset( $scan['scanned_attachment_ids'] ) && is_array( $scan['scanned_attachment_ids'] ) ) {
+			$score_context['scanned_attachment_ids'] = $scan['scanned_attachment_ids'];
+		}
+
+		$score = $this->calculate_score( $merged, $score_context );
+
+		$scan['issues'] = $merged;
+		$scan['score']  = $score;
+
+		update_option( self::OPTION_LAST_SCAN, $scan, false );
+
+		return true;
 	}
 }

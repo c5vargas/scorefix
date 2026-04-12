@@ -15,13 +15,14 @@
 	var cfg = typeof scorefixEditor !== 'undefined' ? scorefixEditor : {};
 	var i18n = cfg.i18n || {};
 
-	function usePostIssues( postId ) {
+	function usePostIssues( postId, postModified ) {
 		var state = useState( {
 			loading: true,
 			error: null,
 			payload: null,
 		} );
 		var setState = state[ 1 ];
+		var mod = postModified || '';
 
 		useEffect(
 			function () {
@@ -54,18 +55,23 @@
 						} );
 					} );
 			},
-			[ postId ]
+			[ postId, mod ]
 		);
 
 		return state[ 0 ];
 	}
 
 	function ScoreFixPanel() {
-		var postId = wp.data.useSelect( function ( select ) {
-			return select( 'core/editor' ).getCurrentPostId();
+		var editorSnap = wp.data.useSelect( function ( select ) {
+			var editor = select( 'core/editor' );
+			var id = editor.getCurrentPostId();
+			var rec = editor.getCurrentPost();
+			var modified = rec && rec.modified ? String( rec.modified ) : '';
+			return { postId: id, postModified: modified };
 		}, [] );
-		var st = usePostIssues( postId );
+		var st = usePostIssues( editorSnap.postId, editorSnap.postModified );
 
+		var postId = editorSnap.postId;
 		if ( ! postId ) {
 			return null;
 		}
