@@ -18,6 +18,9 @@ class ScoreHistory {
 
 	const MAX_ENTRIES = 24;
 
+	/** Dashboard timeline: newest-first row cap (option may store up to MAX_ENTRIES). */
+	const DISPLAY_ENTRIES = 10;
+
 	/**
 	 * Append a row from a full scan snapshot (sync phase).
 	 *
@@ -62,7 +65,7 @@ class ScoreHistory {
 	}
 
 	/**
-	 * Newest-first entries for the dashboard.
+	 * Newest-first entries for the dashboard (last DISPLAY_ENTRIES only).
 	 *
 	 * @return array<int, array{score: int, at: string, trigger: string}>
 	 */
@@ -82,7 +85,10 @@ class ScoreHistory {
 				'trigger' => isset( $row['trigger'] ) ? sanitize_key( (string) $row['trigger'] ) : 'scan',
 			);
 		}
-		return array_reverse( $out );
+		$n = max( 1, (int) self::DISPLAY_ENTRIES );
+		$tail = array_slice( $out, -$n );
+
+		return array_reverse( $tail );
 	}
 
 	/**
