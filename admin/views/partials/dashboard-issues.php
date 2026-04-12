@@ -6,6 +6,7 @@
  *
  * @var array<int, mixed>               $issues
  * @var array<string, mixed>|null     $scorefix_issues_view From DashboardPage::build_issues_table_view().
+ *                                    May include filter_family, family_counts.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -27,6 +28,11 @@ $scorefix_iv_to       = isset( $scorefix_iv['display_to'] ) ? (int) $scorefix_iv
 $scorefix_iv_err      = isset( $scorefix_iv['count_error'] ) ? (int) $scorefix_iv['count_error'] : 0;
 $scorefix_iv_warn     = isset( $scorefix_iv['count_warning'] ) ? (int) $scorefix_iv['count_warning'] : 0;
 $scorefix_iv_pages    = isset( $scorefix_iv['pagination_html'] ) ? (string) $scorefix_iv['pagination_html'] : '';
+$scorefix_iv_fam      = isset( $scorefix_iv['filter_family'] ) ? (string) $scorefix_iv['filter_family'] : '';
+$scorefix_iv_fam_cnt  = isset( $scorefix_iv['family_counts'] ) && is_array( $scorefix_iv['family_counts'] )
+	? $scorefix_iv['family_counts']
+	: array_fill_keys( DashboardPage::issue_family_filter_slugs(), 0 );
+$scorefix_iv_fam_sum  = array_sum( array_map( 'intval', $scorefix_iv_fam_cnt ) );
 
 ?>
 <div class="scorefix-card scorefix-card--issues">
@@ -64,6 +70,30 @@ $scorefix_iv_pages    = isset( $scorefix_iv['pagination_html'] ) ? (string) $sco
 				);
 				?>
 			</a>
+		</nav>
+
+		<nav class="scorefix-issues-filters scorefix-issues-filters--family" aria-label="<?php esc_attr_e( 'Filter issues by category', 'scorefix' ); ?>">
+			<a class="scorefix-issues-filter scorefix-issues-filter--family<?php echo '' === $scorefix_iv_fam ? ' is-active' : ''; ?>" href="<?php echo esc_url( DashboardPage::issues_family_filter_tab_url( '' ) ); ?>">
+				<?php
+				printf(
+					/* translators: %d: issue count for current severity filter */
+					esc_html__( 'All categories (%d)', 'scorefix' ),
+					$scorefix_iv_fam_sum
+				);
+				?>
+			</a>
+			<?php foreach ( DashboardPage::issue_family_filter_slugs() as $scorefix_fam_slug ) : ?>
+				<a class="scorefix-issues-filter scorefix-issues-filter--family scorefix-issues-filter--family-<?php echo esc_attr( $scorefix_fam_slug ); ?><?php echo $scorefix_iv_fam === $scorefix_fam_slug ? ' is-active' : ''; ?>" href="<?php echo esc_url( DashboardPage::issues_family_filter_tab_url( $scorefix_fam_slug ) ); ?>">
+					<?php
+					printf(
+						/* translators: 1: category name (SEO, Performance, …), 2: count */
+						esc_html__( '%1$s (%2$d)', 'scorefix' ),
+						esc_html( DashboardPage::issue_family_filter_tab_label( $scorefix_fam_slug ) ),
+						isset( $scorefix_iv_fam_cnt[ $scorefix_fam_slug ] ) ? (int) $scorefix_iv_fam_cnt[ $scorefix_fam_slug ] : 0
+					);
+					?>
+				</a>
+			<?php endforeach; ?>
 		</nav>
 
 		<?php if ( $scorefix_iv_filtered <= 0 ) : ?>

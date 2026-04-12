@@ -1161,6 +1161,14 @@
 	color: var(--scorefix-warning-icon-fg);
 }
 
+.scorefix-issues-filters--family {
+	margin-top: -6px;
+}
+
+.scorefix-issues-filter--family {
+	font-weight: 500;
+}
+
 .scorefix-issues-displaying {
 	margin: 0 0 10px;
 	font-size: 12px;

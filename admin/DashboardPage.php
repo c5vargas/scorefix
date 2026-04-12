@@ -382,14 +382,8 @@ class DashboardPage {
 			)
 		);
 
-		$filter_q = filter_input( INPUT_GET, 'sf_issue_filter', FILTER_UNSAFE_RAW );
-		$filter   = '';
-		if ( null !== $filter_q && false !== $filter_q ) {
-			$k = sanitize_key( wp_unslash( $filter_q ) );
-			if ( in_array( $k, array( 'error', 'warning' ), true ) ) {
-				$filter = $k;
-			}
-		}
+		$filter        = self::get_issues_severity_filter_from_request();
+		$filter_family = self::get_issues_family_filter_from_request();
 
 		$count_error   = 0;
 		$count_warning = 0;
@@ -402,7 +396,10 @@ class DashboardPage {
 			}
 		}
 
-		$filtered       = self::filter_issues_for_table( $raw, $filter );
+		$by_severity_only = self::filter_issues_for_table( $raw, $filter, '' );
+		$family_counts   = self::count_issues_by_family( $by_severity_only );
+
+		$filtered       = self::filter_issues_for_table( $raw, $filter, $filter_family );
 		$total_filtered = count( $filtered );
 
 		$page_q  = filter_input( INPUT_GET, 'sf_issues_page', FILTER_VALIDATE_INT );
@@ -417,12 +414,14 @@ class DashboardPage {
 
 		$pagination = '';
 		if ( $total_pages > 1 ) {
-			$pagination = self::issues_paginate_links( $current, $total_pages, $filter );
+			$pagination = self::issues_paginate_links( $current, $total_pages, $filter, $filter_family );
 		}
 
 		return array(
 			'items'           => $items,
 			'filter'          => $filter,
+			'filter_family'   => $filter_family,
+			'family_counts'   => $family_counts,
 			'current_page'    => $current,
 			'per_page'        => $per_page,
 			'total_filtered'  => $total_filtered,
@@ -437,25 +436,108 @@ class DashboardPage {
 	}
 
 	/**
+	 * Active severity tab from request.
+	 *
+	 * @return string '', 'error', or 'warning'.
+	 */
+	public static function get_issues_severity_filter_from_request() {
+		$filter_q = filter_input( INPUT_GET, 'sf_issue_filter', FILTER_UNSAFE_RAW );
+		if ( null === $filter_q || false === $filter_q ) {
+			return '';
+		}
+		$k = sanitize_key( wp_unslash( $filter_q ) );
+		return in_array( $k, array( 'error', 'warning' ), true ) ? $k : '';
+	}
+
+	/**
+	 * Allowed issue family filter slugs (matches issue_family_slug()).
+	 *
+	 * @return array<int, string>
+	 */
+	public static function issue_family_filter_slugs() {
+		return array( 'seo', 'performance', 'accessibility', 'other' );
+	}
+
+	/**
+	 * Active family tab from request.
+	 *
+	 * @return string '', or a slug from issue_family_filter_slugs().
+	 */
+	public static function get_issues_family_filter_from_request() {
+		$q = filter_input( INPUT_GET, 'sf_issue_family', FILTER_UNSAFE_RAW );
+		if ( null === $q || false === $q ) {
+			return '';
+		}
+		$k = sanitize_key( wp_unslash( $q ) );
+		return in_array( $k, self::issue_family_filter_slugs(), true ) ? $k : '';
+	}
+
+	/**
+	 * @param array<int, array<string, mixed>> $issues Valid issue rows (already severity-filtered when building family tab counts).
+	 * @return array<string, int> Counts keyed by family slug.
+	 */
+	protected static function count_issues_by_family( array $issues ) {
+		$counts = array_fill_keys( self::issue_family_filter_slugs(), 0 );
+		foreach ( $issues as $issue ) {
+			$slug = self::issue_family_slug( $issue );
+			if ( isset( $counts[ $slug ] ) ) {
+				++$counts[ $slug ];
+			} else {
+				++$counts['other'];
+			}
+		}
+		return $counts;
+	}
+
+	/**
 	 * @param array<int, array<string, mixed>> $issues Valid issue rows.
-	 * @param string                             $filter '', 'error', or 'warning'.
+	 * @param string                             $severity_filter '', 'error', or 'warning'.
+	 * @param string                             $family_filter   '', or slug from issue_family_filter_slugs().
 	 * @return array<int, array<string, mixed>>
 	 */
-	public static function filter_issues_for_table( array $issues, $filter ) {
-		if ( '' === $filter ) {
-			return $issues;
-		}
+	public static function filter_issues_for_table( array $issues, $severity_filter, $family_filter = '' ) {
 		$out = array();
 		foreach ( $issues as $issue ) {
-			$s = isset( $issue['severity'] ) ? (string) $issue['severity'] : '';
-			if ( 'error' === $filter && ScanComparison::SEVERITY_ERROR === $s ) {
-				$out[] = $issue;
+			if ( ! self::issue_matches_severity_filter( $issue, $severity_filter ) ) {
+				continue;
 			}
-			if ( 'warning' === $filter && ( ScanComparison::SEVERITY_WARNING === $s || 'low' === $s ) ) {
-				$out[] = $issue;
+			if ( ! self::issue_matches_family_filter( $issue, $family_filter ) ) {
+				continue;
 			}
+			$out[] = $issue;
 		}
 		return $out;
+	}
+
+	/**
+	 * @param array<string, mixed> $issue           Issue row.
+	 * @param string               $severity_filter '', 'error', or 'warning'.
+	 * @return bool
+	 */
+	protected static function issue_matches_severity_filter( array $issue, $severity_filter ) {
+		if ( '' === $severity_filter ) {
+			return true;
+		}
+		$s = isset( $issue['severity'] ) ? (string) $issue['severity'] : '';
+		if ( 'error' === $severity_filter ) {
+			return ScanComparison::SEVERITY_ERROR === $s;
+		}
+		if ( 'warning' === $severity_filter ) {
+			return ScanComparison::SEVERITY_WARNING === $s || 'low' === $s;
+		}
+		return true;
+	}
+
+	/**
+	 * @param array<string, mixed> $issue         Issue row.
+	 * @param string               $family_filter '', or family slug.
+	 * @return bool
+	 */
+	protected static function issue_matches_family_filter( array $issue, $family_filter ) {
+		if ( '' === $family_filter ) {
+			return true;
+		}
+		return self::issue_family_slug( $issue ) === $family_filter;
 	}
 
 	/**
@@ -464,12 +546,16 @@ class DashboardPage {
 	 * @param int    $current     Current page (1-based).
 	 * @param int    $total_pages Total pages.
 	 * @param string $filter      Active severity filter slug.
+	 * @param string $family      Active family filter slug.
 	 * @return string
 	 */
-	public static function issues_paginate_links( $current, $total_pages, $filter ) {
+	public static function issues_paginate_links( $current, $total_pages, $filter, $family = '' ) {
 		$base = admin_url( 'options-general.php?page=scorefix' );
 		if ( '' !== $filter ) {
 			$base = add_query_arg( 'sf_issue_filter', $filter, $base );
+		}
+		if ( '' !== $family ) {
+			$base = add_query_arg( 'sf_issue_family', $family, $base );
 		}
 		$keys = array( 'scorefix_scan', 'scorefix_fixes', 'scorefix_reminders' );
 		foreach ( $keys as $key ) {
@@ -621,6 +707,16 @@ class DashboardPage {
 			'slug'  => $slug,
 			'label' => self::issue_family_label_for_slug( $slug, $issue ),
 		);
+	}
+
+	/**
+	 * Localized label for a family filter tab (issue-independent).
+	 *
+	 * @param string $slug Family slug.
+	 * @return string
+	 */
+	public static function issue_family_filter_tab_label( $slug ) {
+		return self::issue_family_label_for_slug( sanitize_key( (string) $slug ), array() );
 	}
 
 	/**
@@ -1041,23 +1137,61 @@ class DashboardPage {
 	}
 
 	/**
-	 * URL for issues table filter tabs.
+	 * URL for issues table severity filter tabs (preserves active family filter).
 	 *
 	 * @param string $filter '', 'error', or 'warning'.
 	 * @return string
 	 */
 	public static function issues_filter_tab_url( $filter ) {
-		$args = array( 'page' => 'scorefix' );
+		$args = array_merge(
+			array( 'page' => 'scorefix' ),
+			self::issues_dashboard_preserve_get_args()
+		);
 		if ( '' !== $filter ) {
 			$args['sf_issue_filter'] = $filter;
 		}
-		$keys = array( 'scorefix_scan', 'scorefix_fixes', 'scorefix_reminders' );
+		$fam = self::get_issues_family_filter_from_request();
+		if ( '' !== $fam ) {
+			$args['sf_issue_family'] = $fam;
+		}
+		return add_query_arg( $args, admin_url( 'options-general.php' ) );
+	}
+
+	/**
+	 * URL for issues table category (family) filter tabs (preserves active severity filter).
+	 *
+	 * @param string $family '', or slug from issue_family_filter_slugs().
+	 * @return string
+	 */
+	public static function issues_family_filter_tab_url( $family ) {
+		$args = array_merge(
+			array( 'page' => 'scorefix' ),
+			self::issues_dashboard_preserve_get_args()
+		);
+		$sev = self::get_issues_severity_filter_from_request();
+		if ( '' !== $sev ) {
+			$args['sf_issue_filter'] = $sev;
+		}
+		if ( '' !== $family ) {
+			$args['sf_issue_family'] = $family;
+		}
+		return add_query_arg( $args, admin_url( 'options-general.php' ) );
+	}
+
+	/**
+	 * Optional dashboard query args to carry across issue filter navigations.
+	 *
+	 * @return array<string, string>
+	 */
+	protected static function issues_dashboard_preserve_get_args() {
+		$out   = array();
+		$keys  = array( 'scorefix_scan', 'scorefix_fixes', 'scorefix_reminders' );
 		foreach ( $keys as $key ) {
 			$val = filter_input( INPUT_GET, $key, FILTER_UNSAFE_RAW );
 			if ( null !== $val && false !== $val && '' !== (string) $val ) {
-				$args[ $key ] = sanitize_text_field( wp_unslash( $val ) );
+				$out[ $key ] = sanitize_text_field( wp_unslash( $val ) );
 			}
 		}
-		return add_query_arg( $args, admin_url( 'options-general.php' ) );
+		return $out;
 	}
 }
