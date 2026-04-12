@@ -370,7 +370,7 @@ class DashboardPage {
 	 * @return array<string, mixed>
 	 */
 	public static function build_issues_table_view( array $issues ) {
-		$per_page = (int) apply_filters( 'scorefix_issues_per_page', 20 );
+		$per_page = (int) apply_filters( 'scorefix_issues_per_page', 10 );
 		$per_page = max( 1, min( 100, $per_page ) );
 
 		$raw = array_values(

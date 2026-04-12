@@ -37,13 +37,4 @@ defined( 'ABSPATH' ) || exit;
 			<?php include SCOREFIX_PLUGIN_DIR . 'admin/views/partials/dashboard-score-timeline.php'; ?>
 		</div>
 	</div>
-
-	<div class="scorefix-card scorefix-card--limits">
-		<h2><?php esc_html_e( 'What ScoreFix does not replace', 'scorefix' ); ?></h2>
-		<ul class="scorefix-list">
-			<li><?php esc_html_e( 'Perfect editorial ALT text for every image (you may still want to refine wording for SEO).', 'scorefix' ); ?></li>
-			<li><?php esc_html_e( 'Full WCAG audit or legal compliance guarantee.', 'scorefix' ); ?></li>
-			<li><?php esc_html_e( 'Problems inside heavily customized JavaScript UIs without server-rendered HTML.', 'scorefix' ); ?></li>
-		</ul>
-	</div>
 </div>

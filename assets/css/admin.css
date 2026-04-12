@@ -863,15 +863,6 @@
 	vertical-align: top;
 }
 
-.scorefix-list {
-	list-style: disc;
-	margin-left: 1.25em;
-}
-
-.scorefix-card--limits {
-	margin-top: 16px;
-}
-
 /* Scan reminders & SEO — same shell as Automation (scorefix-card--automation) */
 .scorefix-card--reminders,
 .scorefix-card--seo {
