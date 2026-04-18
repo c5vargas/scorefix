@@ -1,12 +1,12 @@
 <?php
 /**
  * Plugin Name:       ScoreFix – Boost Lighthouse & Improve UX
- * Plugin URI:        https://scorefix.example
  * Description:       Fix the issues hurting your Lighthouse score and conversions in one click. No coding required.
  * Version:           1.0.6
  * Requires at least: 6.0
  * Requires PHP:      7.4
- * Author:            ScoreFix
+ * Author:            Carles Vargas
+ * Author URI:        https://carvar.es/
  * License:           GPL v2 or later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       scorefix

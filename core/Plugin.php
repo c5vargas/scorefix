@@ -102,7 +102,52 @@ class Plugin {
 			$meta_desc->register( self::$loader );
 		}
 
+		add_filter( 'plugin_action_links_' . SCOREFIX_PLUGIN_BASENAME, array( self::class, 'filter_plugin_action_links' ), 10, 1 );
+		add_filter( 'plugin_row_meta', array( self::class, 'filter_plugin_row_meta' ), 10, 2 );
+
 		self::$loader->run();
+	}
+
+	/**
+	 * “Settings” first in plugins list (slug matches DashboardPage::register_menu).
+	 *
+	 * @param array<int, string> $links Existing action links HTML.
+	 * @return array<int, string>
+	 */
+	public static function filter_plugin_action_links( $links ) {
+		if ( ! is_array( $links ) ) {
+			$links = array();
+		}
+		$url = admin_url( 'admin.php?page=scorefix' );
+		array_unshift(
+			$links,
+			sprintf(
+				'<a href="%1$s">%2$s</a>',
+				esc_url( $url ),
+				esc_html__( 'Settings', 'scorefix' )
+			)
+		);
+		return $links;
+	}
+
+	/**
+	 * Extra row under plugin description on Plugins screen.
+	 *
+	 * @param array<int, string> $links Plugin meta links HTML.
+	 * @param string             $file  Plugin basename.
+	 * @return array<int, string>
+	 */
+	public static function filter_plugin_row_meta( $links, $file ) {
+		if ( $file !== SCOREFIX_PLUGIN_BASENAME || ! is_array( $links ) ) {
+			return $links;
+		}
+		$url = admin_url( 'admin.php?page=scorefix' );
+		$links[] = sprintf(
+			'<a href="%1$s">%2$s</a>',
+			esc_url( $url ),
+			esc_html__( 'See details', 'scorefix' )
+		);
+		return $links;
 	}
 
 	/**
