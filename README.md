@@ -1,3 +1,7 @@
+![WordPress Version](https://img.shields.io/badge/wordpress-%3E%3D%206.0-blue.svg)
+![PHP Version](https://img.shields.io/badge/php-%3E%3D%207.4-8892bf.svg)
+![License](https://img.shields.io/badge/license-GPL--2.0--or--later-green.svg)
+
 # ScoreFix – Boost Lighthouse & Improve UX
 
 WordPress plugin: scan for common Lighthouse accessibility issues, show a **ScoreFix Score (0–100)**, and optionally apply **non-destructive runtime fixes** (no fake overlays).
