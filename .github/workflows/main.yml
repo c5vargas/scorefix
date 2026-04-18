@@ -1,0 +1,20 @@
+name: WP Plugin Checks
+
+on: [push, pull_request]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: mbstring, dom, curl, libxml, zlib
+
+      - name: Check PHP Syntax
+        run: |
+          find . -name "*.php" -not -path "./vendor/*" | xargs -n 1 -P 4 php -l
