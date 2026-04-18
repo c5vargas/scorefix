@@ -7,6 +7,8 @@
 
 namespace ScoreFix\Fixes;
 
+use ScoreFix\Support\ViewportMeta;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -70,6 +72,8 @@ class FixEngine {
 			return $html;
 		}
 
+		$this->fix_viewport_metas( $dom );
+
 		$root = $dom->getElementsByTagName( 'body' )->item( 0 );
 		if ( ! $root instanceof \DOMElement ) {
 			$root = $dom->documentElement;
@@ -87,6 +91,37 @@ class FixEngine {
 		}
 
 		return (string) preg_replace( '/^<\?xml[^>]+>\s*/', '', $out );
+	}
+
+	/**
+	 * Normalize viewport meta tags (SEO / zoom).
+	 *
+	 * @param \DOMDocument $dom Document.
+	 * @return void
+	 */
+	protected function fix_viewport_metas( \DOMDocument $dom ) {
+		$metas = $dom->getElementsByTagName( 'meta' );
+		if ( ! $metas ) {
+			return;
+		}
+		for ( $i = 0; $i < $metas->length; $i++ ) {
+			$m = $metas->item( $i );
+			if ( ! $m instanceof \DOMElement ) {
+				continue;
+			}
+			if ( 'viewport' !== strtolower( trim( (string) $m->getAttribute( 'name' ) ) ) ) {
+				continue;
+			}
+			$c = trim( (string) $m->getAttribute( 'content' ) );
+			if ( '' === $c ) {
+				continue;
+			}
+			$n = ViewportMeta::normalize_content( $c );
+			if ( $n !== $c ) {
+				$m->setAttribute( 'content', $n );
+				$this->bump_stat( 'viewport_meta' );
+			}
+		}
 	}
 
 	/**

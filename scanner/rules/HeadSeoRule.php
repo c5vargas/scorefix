@@ -7,6 +7,8 @@
 
 namespace ScoreFix\Scanner\Rules;
 
+use ScoreFix\Support\ViewportMeta;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -131,6 +133,20 @@ class HeadSeoRule {
 			}
 		}
 
+		if ( apply_filters( 'scorefix_head_seo_report_viewport_zoom_restrictions', true, $capture_url ) ) {
+			if ( self::has_viewport_meta( $dom ) && self::viewport_document_restricts_zoom( $dom ) ) {
+				$out[] = $issue(
+					'seo_head_viewport_restricts_zoom',
+					'medium',
+					array(
+						'context'      => 'rendered',
+						'impact'       => 'business',
+						'capture_hint' => 'viewport',
+					)
+				);
+			}
+		}
+
 		if ( apply_filters( 'scorefix_head_seo_report_noindex_in_html', false, $capture_url ) ) {
 			$robots = self::get_meta_robots_content( $dom );
 			if ( is_string( $robots ) && '' !== $robots && preg_match( '/\bnoindex\b/i', $robots ) ) {
@@ -227,6 +243,36 @@ class HeadSeoRule {
 				continue;
 			}
 			if ( in_array( 'canonical', $rels, true ) && '' !== trim( (string) $link->getAttribute( 'href' ) ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * True if any viewport meta has restrictive zoom (Lighthouse SEO).
+	 *
+	 * @param \DOMDocument $dom Document.
+	 * @return bool
+	 */
+	protected static function viewport_document_restricts_zoom( \DOMDocument $dom ) {
+		$metas = $dom->getElementsByTagName( 'meta' );
+		if ( ! $metas ) {
+			return false;
+		}
+		for ( $i = 0; $i < $metas->length; $i++ ) {
+			$m = $metas->item( $i );
+			if ( ! $m instanceof \DOMElement ) {
+				continue;
+			}
+			if ( 'viewport' !== strtolower( trim( (string) $m->getAttribute( 'name' ) ) ) ) {
+				continue;
+			}
+			$c = trim( (string) $m->getAttribute( 'content' ) );
+			if ( '' === $c ) {
+				continue;
+			}
+			if ( ViewportMeta::content_restricts_zoom( $c ) ) {
 				return true;
 			}
 		}

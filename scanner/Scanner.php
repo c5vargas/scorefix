@@ -69,6 +69,7 @@ class Scanner {
 		'seo_head_meta_description_missing' => 1,
 		'seo_head_canonical_missing'     => 1,
 		'seo_head_viewport_missing'      => 2,
+		'seo_head_viewport_restricts_zoom' => 2,
 		'seo_head_robots_noindex'        => 1,
 		// Phase 4 — JSON-LD diagnostics (conservative).
 		'seo_jsonld_invalid_json'             => 1,

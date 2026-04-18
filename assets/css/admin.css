@@ -1904,3 +1904,74 @@
 	flex-shrink: 0;
 	opacity: 0.85;
 }
+
+/* WP Escritorio — widget Site health (compacto, mismas variables que .scorefix-dashboard) */
+.scorefix-wp-dash-health {
+	--scorefix-radius: 16px;
+	--scorefix-radius-lg: 20px;
+	--scorefix-primary: #2563eb;
+	--scorefix-primary-soft: #eff6ff;
+	--scorefix-slate-900: #0f172a;
+	--scorefix-slate-500: #64748b;
+	--scorefix-slate-100: #f1f5f9;
+	--scorefix-automation-bg: #f8fafc;
+	--scorefix-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08);
+	box-sizing: border-box;
+	text-align: center;
+	padding: 4px 8px 8px;
+	margin: -6px 0 0;
+}
+
+.scorefix-wp-dash-health *,
+.scorefix-wp-dash-health *::before,
+.scorefix-wp-dash-health *::after {
+	box-sizing: border-box;
+}
+
+.scorefix-wp-dash-health .scorefix-donut-wrap {
+	margin: 0 auto 14px;
+	align-items: center;
+}
+
+.scorefix-wp-dash-health .scorefix-donut--wp-widget {
+	width: 140px;
+	height: 140px;
+}
+
+.scorefix-wp-dash-health .scorefix-donut--wp-widget .scorefix-donut__value {
+	font-size: 34px;
+}
+
+.scorefix-wp-dash-health .scorefix-donut--wp-widget .scorefix-donut__value--na {
+	font-size: 26px;
+}
+
+.scorefix-wp-dash-health .scorefix-donut--wp-widget .scorefix-donut__label {
+	margin-top: 2px;
+	font-size: 9px;
+}
+
+.scorefix-wp-dash-health__headline {
+	margin: 0 0 8px;
+	font-size: 16px;
+	font-weight: 700;
+	line-height: 1.35;
+	color: var(--scorefix-slate-900);
+	letter-spacing: -0.02em;
+}
+
+.scorefix-wp-dash-health__sub {
+	margin: 0 0 16px;
+	font-size: 13px;
+	line-height: 1.5;
+	color: var(--scorefix-slate-500);
+	max-width: 24rem;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+.scorefix-wp-dash-health__cta.scorefix-btn-scan {
+	display: inline-flex !important;
+	text-decoration: none;
+	color: #fff !important;
+}

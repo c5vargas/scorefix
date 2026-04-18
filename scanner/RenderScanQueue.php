@@ -7,6 +7,8 @@
 
 namespace ScoreFix\Scanner;
 
+use ScoreFix\Core\Plugin;
+use ScoreFix\Fixes\FixEngine;
 use ScoreFix\Scanner\Rules\HeadSeoRule;
 use ScoreFix\Scanner\Rules\JsonLdSeoRule;
 use ScoreFix\Scanner\ScoreHistory;
@@ -102,6 +104,9 @@ class RenderScanQueue {
 			$html = UrlHtmlCapture::fetch( $url, $token );
 			if ( ! is_wp_error( $html ) ) {
 				$html_str = (string) $html;
+				if ( Plugin::fixes_enabled() && '' !== trim( $html_str ) && preg_match( '/<(?:!doctype|html|body)\b/i', $html_str ) ) {
+					$html_str = ( new FixEngine() )->process_content( $html_str );
+				}
 				$maker    = function ( $t, $s, $e ) use ( $scanner, $url ) {
 					$e['post_id']     = 0;
 					$e['source']      = 'rendered_url';

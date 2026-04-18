@@ -47,6 +47,47 @@ class DashboardPage {
 	}
 
 	/**
+	 * Metabox en Escritorio: resumen de salud (compacto).
+	 *
+	 * @return void
+	 */
+	public function register_wp_dashboard_widget() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		wp_add_dashboard_widget(
+			'scorefix_site_health',
+			__( 'Site health', 'scorefix' ),
+			array( $this, 'render_wp_dashboard_site_health_widget' )
+		);
+	}
+
+	/**
+	 * Contenido del widget Escritorio.
+	 *
+	 * @return void
+	 */
+	public function render_wp_dashboard_site_health_widget() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		$scan = Scanner::get_last_scan();
+		$score  = is_array( $scan ) && isset( $scan['score'] ) ? (int) $scan['score'] : null;
+		$issues = is_array( $scan ) && isset( $scan['issues'] ) && is_array( $scan['issues'] ) ? $scan['issues'] : array();
+
+		$metrics   = DashboardMetrics::for_dashboard( $scan );
+		$perf_err  = isset( $metrics['active_errors']['value'] ) && null !== $metrics['active_errors']['value'] ? (int) $metrics['active_errors']['value'] : 0;
+		$perf_warn = isset( $metrics['warnings']['value'] ) && null !== $metrics['warnings']['value'] ? (int) $metrics['warnings']['value'] : 0;
+
+		$perf_copy   = self::performance_card_copy( $score, count( $issues ), $perf_err, $perf_warn );
+		$widget_sub  = self::site_health_wp_widget_subline( $score, count( $issues ), $perf_err, $perf_warn );
+		$scorefix_url = admin_url( 'admin.php?page=scorefix' );
+
+		include SCOREFIX_PLUGIN_DIR . 'admin/views/partials/wp-dashboard-site-health.php';
+	}
+
+	/**
 	 * AJAX: background render-queue state for dashboard polling.
 	 *
 	 * @return void
@@ -69,9 +110,13 @@ class DashboardPage {
 	 * @return void
 	 */
 	public function enqueue_assets( $hook_suffix ) {
-		if ( 'toplevel_page_scorefix' !== $hook_suffix ) {
+		$on_scorefix = ( 'toplevel_page_scorefix' === $hook_suffix );
+		$on_home     = ( 'index.php' === $hook_suffix && current_user_can( 'manage_options' ) );
+
+		if ( ! $on_scorefix && ! $on_home ) {
 			return;
 		}
+
 		wp_enqueue_style( 'dashicons' );
 		wp_enqueue_style(
 			'scorefix-admin',
@@ -79,6 +124,10 @@ class DashboardPage {
 			array(),
 			SCOREFIX_VERSION
 		);
+
+		if ( ! $on_scorefix ) {
+			return;
+		}
 
 		wp_enqueue_script(
 			'scorefix-admin-dashboard',
@@ -237,6 +286,31 @@ class DashboardPage {
 		return array(
 			'headline' => $headline,
 			'sub'      => $sub,
+		);
+	}
+
+	/**
+	 * Subtítulo corto para widget Escritorio (sin párrafos largos).
+	 *
+	 * @param int|null $score          Score 0–100 o null.
+	 * @param int      $total_issues   Total incidencias último scan.
+	 * @param int      $error_count    Errores activos.
+	 * @param int      $warning_count  Avisos.
+	 * @return string
+	 */
+	public static function site_health_wp_widget_subline( $score, $total_issues, $error_count, $warning_count ) {
+		if ( null === $score ) {
+			return __( 'ScoreFix checks published content and suggests fixes without editing code.', 'scorefix' );
+		}
+		if ( $total_issues <= 0 ) {
+			return __( 'Last scan: no issues detected.', 'scorefix' );
+		}
+		return sprintf(
+			/* translators: 1: total issues, 2: errors, 3: warnings */
+			__( '%1$d issues in the last scan (%2$d errors, %3$d warnings).', 'scorefix' ),
+			$total_issues,
+			$error_count,
+			$warning_count
 		);
 	}
 

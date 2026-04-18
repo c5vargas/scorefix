@@ -80,6 +80,7 @@ class Plugin {
 
 		self::$loader->add_action( 'init', $dashboard, 'register_ajax_handlers', 10, 0 );
 		self::$loader->add_action( 'admin_menu', $dashboard, 'register_menu', 10, 0 );
+		self::$loader->add_action( 'wp_dashboard_setup', $dashboard, 'register_wp_dashboard_widget', 10, 0 );
 		self::$loader->add_action( 'admin_enqueue_scripts', $dashboard, 'enqueue_assets', 10, 1 );
 		self::$loader->add_action( 'admin_init', $actions, 'handle_actions', 10, 0 );
 

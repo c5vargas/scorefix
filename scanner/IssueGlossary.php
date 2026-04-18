@@ -299,6 +299,14 @@ class IssueGlossary {
 			),
 		);
 
+		$d['seo_head_viewport_restricts_zoom'] = array(
+			'title'    => __( 'Viewport meta restricts zoom (mobile)', 'scorefix' ),
+			'business' => __( 'The viewport meta uses user-scalable=no or maximum-scale below 5, which blocks or limits pinch-zoom. Lighthouse flags this under technical SEO; it also hurts accessibility. With automatic fixes enabled, ScoreFix normalizes the viewport content on output.', 'scorefix' ),
+			'references' => array(
+				__( 'Lighthouse (orientative): SEO — viewport', 'scorefix' ),
+			),
+		);
+
 		$d['seo_head_robots_noindex'] = array(
 			'title'    => __( 'Robots meta includes noindex (informational)', 'scorefix' ),
 			'business' => __( 'The captured HTML has a robots meta tag that includes noindex, which usually discourages indexing. This issue is off by default; enable it with the scorefix_head_seo_report_noindex_in_html filter when you want to audit it.', 'scorefix' ),
