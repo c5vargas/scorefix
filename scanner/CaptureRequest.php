@@ -27,12 +27,14 @@ class CaptureRequest {
 		if ( is_admin() ) {
 			return;
 		}
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Signed front request; HMAC verifies query params (no admin form nonce).
 		if ( empty( $_GET[ self::QUERY_ID ] ) || empty( $_GET[ self::QUERY_SIG ] ) ) {
 			return;
 		}
 
-		$id = sanitize_text_field( wp_unslash( (string) $_GET[ self::QUERY_ID ] ) );
+		$id     = sanitize_text_field( wp_unslash( (string) $_GET[ self::QUERY_ID ] ) );
 		$sig_in = sanitize_text_field( wp_unslash( (string) $_GET[ self::QUERY_SIG ] ) );
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 		if ( '' === $id || strlen( $id ) > 48 || '' === $sig_in ) {
 			return;
 		}

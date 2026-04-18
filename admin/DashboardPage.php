@@ -143,7 +143,9 @@ class DashboardPage {
 				'ajaxUrl'         => admin_url( 'admin-ajax.php' ),
 				'nonce'           => wp_create_nonce( 'scorefix_render_status' ),
 				'renderScan'      => RenderScanQueue::get_background_scan_state(),
-				'renderCountTpl'  => __( '%1$d of %2$d rendered URLs processed', 'scorefix' ),
+				'renderCountTpl'  =>
+					/* translators: 1: number of rendered URLs processed so far, 2: total rendered URLs to process */
+					__( '%1$d of %2$d rendered URLs processed', 'scorefix' ),
 			)
 		);
 	}

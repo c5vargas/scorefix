@@ -267,27 +267,28 @@ class RenderScanQueue {
 		if ( wp_doing_cron() ) {
 			return true;
 		}
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only routing; AJAX handler verifies nonce; admin branch requires capability + screen.
+		$allowed = false;
 		// Dashboard AJAX poll advances the queue while the admin keeps the ScoreFix screen open.
 		if ( function_exists( 'wp_doing_ajax' ) && wp_doing_ajax() ) {
 			$action = isset( $_REQUEST['action'] ) ? sanitize_key( wp_unslash( $_REQUEST['action'] ) ) : '';
 			if ( 'scorefix_render_scan_status' === $action && current_user_can( 'manage_options' ) ) {
-				return true;
+				$allowed = true;
 			}
 		}
-		if ( is_admin() && current_user_can( 'manage_options' ) ) {
+		if ( ! $allowed && is_admin() && current_user_can( 'manage_options' ) ) {
 			// Prefer hook context: $GLOBALS['pagenow'] is not always set early on all hosts.
 			if ( function_exists( 'doing_action' ) && doing_action( 'load-toplevel_page_scorefix' ) ) {
-				return true;
-			}
-			$hook = isset( $GLOBALS['pagenow'] ) ? (string) $GLOBALS['pagenow'] : '';
-			if ( 'admin.php' === $hook ) {
+				$allowed = true;
+			} elseif ( isset( $GLOBALS['pagenow'] ) && 'admin.php' === (string) $GLOBALS['pagenow'] ) {
 				$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
 				if ( 'scorefix' === $page ) {
-					return true;
+					$allowed = true;
 				}
 			}
 		}
-		return false;
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
+		return $allowed;
 	}
 
 	/**

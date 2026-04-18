@@ -15,12 +15,10 @@ defined( 'ABSPATH' ) || exit;
 use ScoreFix\Admin\ActionsController;
 use ScoreFix\Admin\DashboardPage;
 
-if ( ! isset( $deferred_meta ) || ! is_array( $deferred_meta ) ) {
-	$deferred_meta = array();
-}
-if ( ! isset( $last_settings_event ) || ! is_array( $last_settings_event ) ) {
-	$last_settings_event = array( 'reason' => '', 'at' => '' );
-}
+$scorefix_deferred_meta = ( isset( $deferred_meta ) && is_array( $deferred_meta ) ) ? $deferred_meta : array();
+$scorefix_last_settings_event = ( isset( $last_settings_event ) && is_array( $last_settings_event ) )
+	? array_merge( array( 'reason' => '', 'at' => '' ), $last_settings_event )
+	: array( 'reason' => '', 'at' => '' );
 
 ?>
 <div class="scorefix-card scorefix-card--automation">
@@ -64,15 +62,15 @@ if ( ! isset( $last_settings_event ) || ! is_array( $last_settings_event ) ) {
 	<div class="scorefix-automation__chart" aria-hidden="true">
 		<div class="scorefix-automation__chart-inner"></div>
 	</div>
-	<?php if ( ! empty( $deferred_meta['run_after'] ) ) : ?>
+	<?php if ( ! empty( $scorefix_deferred_meta['run_after'] ) ) : ?>
 		<p class="scorefix-deferred-notice scorefix-muted" role="status">
 			<span class="dashicons dashicons-clock" aria-hidden="true"></span>
 			<?php esc_html_e( 'A validation scan is scheduled to refresh your score after the latest settings change.', 'scorefix' ); ?>
 		</p>
-	<?php elseif ( ! empty( $last_settings_event['at'] ) && ! empty( $last_settings_event['reason'] ) ) : ?>
+	<?php elseif ( ! empty( $scorefix_last_settings_event['at'] ) && ! empty( $scorefix_last_settings_event['reason'] ) ) : ?>
 		<p class="scorefix-settings-event scorefix-muted">
 			<?php
-			$scorefix_ev_at = strtotime( (string) $last_settings_event['at'] );
+			$scorefix_ev_at = strtotime( (string) $scorefix_last_settings_event['at'] );
 			$scorefix_ev_label = $scorefix_ev_at
 				? wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $scorefix_ev_at )
 				: '';
@@ -80,7 +78,7 @@ if ( ! isset( $last_settings_event ) || ! is_array( $last_settings_event ) ) {
 				sprintf(
 					/* translators: 1: human reason, 2: formatted datetime */
 					__( 'Last settings change: %1$s (%2$s)', 'scorefix' ),
-					DashboardPage::settings_impact_reason_label( (string) $last_settings_event['reason'] ),
+					DashboardPage::settings_impact_reason_label( (string) $scorefix_last_settings_event['reason'] ),
 					$scorefix_ev_label
 				)
 			);

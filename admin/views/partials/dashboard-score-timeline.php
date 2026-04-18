@@ -14,21 +14,15 @@ defined( 'ABSPATH' ) || exit;
 
 use ScoreFix\Admin\DashboardPage;
 
-if ( ! isset( $score_history ) || ! is_array( $score_history ) ) {
-	$score_history = array();
-}
-if ( ! isset( $comparison ) || ! is_array( $comparison ) ) {
-	$comparison = array();
-}
-if ( ! isset( $impact_estimate ) || ! is_array( $impact_estimate ) ) {
-	$impact_estimate = array();
-}
+$scorefix_score_history = ( isset( $score_history ) && is_array( $score_history ) ) ? $score_history : array();
+$scorefix_comparison = ( isset( $comparison ) && is_array( $comparison ) ) ? $comparison : array();
+$scorefix_impact_estimate = ( isset( $impact_estimate ) && is_array( $impact_estimate ) ) ? $impact_estimate : array();
 
-$scorefix_has_delta = ! empty( $comparison['score_delta_available'] ) && isset( $comparison['score_delta'] );
-$scorefix_delta_val = $scorefix_has_delta ? (int) $comparison['score_delta'] : null;
+$scorefix_has_delta = ! empty( $scorefix_comparison['score_delta_available'] ) && isset( $scorefix_comparison['score_delta'] );
+$scorefix_delta_val = $scorefix_has_delta ? (int) $scorefix_comparison['score_delta'] : null;
 
 $scorefix_show_delta_block = null !== $score && $scorefix_has_delta;
-$scorefix_show_impact_solo = ! empty( $impact_estimate['band'] ) && ! $scorefix_show_delta_block;
+$scorefix_show_impact_solo = ! empty( $scorefix_impact_estimate['band'] ) && ! $scorefix_show_delta_block;
 $scorefix_show_insight     = $scorefix_show_delta_block || $scorefix_show_impact_solo;
 
 ?>
@@ -57,25 +51,25 @@ $scorefix_show_insight     = $scorefix_show_delta_block || $scorefix_show_impact
 				</div>
 			<?php endif; ?>
 
-			<?php if ( ! empty( $impact_estimate['band'] ) ) : ?>
+			<?php if ( ! empty( $scorefix_impact_estimate['band'] ) ) : ?>
 				<div class="scorefix-timeline-compact__impact">
-					<p class="scorefix-timeline-compact__impact-band"><?php echo esc_html( (string) $impact_estimate['band'] ); ?></p>
-					<?php if ( ! empty( $impact_estimate['disclaimer'] ) ) : ?>
-						<p class="scorefix-timeline-compact__impact-disclaimer scorefix-muted"><?php echo esc_html( (string) $impact_estimate['disclaimer'] ); ?></p>
+					<p class="scorefix-timeline-compact__impact-band"><?php echo esc_html( (string) $scorefix_impact_estimate['band'] ); ?></p>
+					<?php if ( ! empty( $scorefix_impact_estimate['disclaimer'] ) ) : ?>
+						<p class="scorefix-timeline-compact__impact-disclaimer scorefix-muted"><?php echo esc_html( (string) $scorefix_impact_estimate['disclaimer'] ); ?></p>
 					<?php endif; ?>
 				</div>
 			<?php endif; ?>
 		</div>
 	<?php endif; ?>
 
-	<?php if ( count( $score_history ) < 1 ) : ?>
+	<?php if ( count( $scorefix_score_history ) < 1 ) : ?>
 		<p class="scorefix-timeline-compact__empty scorefix-muted"><?php esc_html_e( 'No log entries yet — run a scan to record snapshots here.', 'scorefix' ); ?></p>
 	<?php else : ?>
 		<?php if ( $scorefix_show_insight ) : ?>
 			<p class="scorefix-timeline-compact__log-label"><?php esc_html_e( 'Log', 'scorefix' ); ?></p>
 		<?php endif; ?>
 		<ol class="scorefix-timeline-compact__list" aria-label="<?php esc_attr_e( 'Score snapshots', 'scorefix' ); ?>">
-			<?php foreach ( $score_history as $scorefix_hist_row ) : ?>
+			<?php foreach ( $scorefix_score_history as $scorefix_hist_row ) : ?>
 				<?php
 				$scorefix_hist_score = isset( $scorefix_hist_row['score'] ) ? (int) $scorefix_hist_row['score'] : 0;
 				$scorefix_hist_at    = isset( $scorefix_hist_row['at'] ) ? (string) $scorefix_hist_row['at'] : '';
@@ -88,13 +82,13 @@ $scorefix_show_insight     = $scorefix_show_delta_block || $scorefix_show_impact
 					? wp_date( get_option( 'time_format' ), $scorefix_hist_ts )
 					: '';
 				$scorefix_hist_tone  = DashboardPage::donut_score_tone_slug( $scorefix_hist_score );
-				$pill_class          = 'scorefix-timeline-compact__pill';
+				$scorefix_pill_class = 'scorefix-timeline-compact__pill';
 				if ( null !== $scorefix_hist_tone ) {
-					$pill_class .= ' scorefix-timeline-compact__pill--tone-' . $scorefix_hist_tone;
+					$scorefix_pill_class .= ' scorefix-timeline-compact__pill--tone-' . $scorefix_hist_tone;
 				}
 				?>
 				<li class="scorefix-timeline-compact__item">
-					<span class="<?php echo esc_attr( $pill_class ); ?>"><?php echo esc_html( (string) $scorefix_hist_score ); ?></span>
+					<span class="<?php echo esc_attr( $scorefix_pill_class ); ?>"><?php echo esc_html( (string) $scorefix_hist_score ); ?></span>
 					<div class="scorefix-timeline-compact__body">
 						<span class="scorefix-timeline-compact__datetime">
 							<?php echo esc_html( trim( $scorefix_hist_date . ( $scorefix_hist_time ? ' · ' . $scorefix_hist_time : '' ) ) ); ?>

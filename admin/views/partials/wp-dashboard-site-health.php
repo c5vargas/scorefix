@@ -14,7 +14,7 @@ defined( 'ABSPATH' ) || exit;
 
 use ScoreFix\Admin\DashboardPage;
 
-$cta_label = null === $score
+$scorefix_cta_label = null === $score
 	? __( 'Run first scan', 'scorefix' )
 	: __( 'View ScoreFix', 'scorefix' );
 ?>
@@ -49,5 +49,5 @@ $cta_label = null === $score
 	</div>
 	<p class="scorefix-wp-dash-health__headline" role="heading" aria-level="2"><?php echo esc_html( $perf_copy['headline'] ); ?></p>
 	<p class="scorefix-wp-dash-health__sub"><?php echo esc_html( $widget_sub ); ?></p>
-	<a class="button scorefix-btn-scan scorefix-wp-dash-health__cta" href="<?php echo esc_url( $scorefix_url ); ?>"><?php echo esc_html( $cta_label ); ?></a>
+	<a class="button scorefix-btn-scan scorefix-wp-dash-health__cta" href="<?php echo esc_url( $scorefix_url ); ?>"><?php echo esc_html( $scorefix_cta_label ); ?></a>
 </div>

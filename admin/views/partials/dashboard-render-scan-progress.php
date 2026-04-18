@@ -13,9 +13,9 @@ if ( empty( $render_scan_state['running'] ) ) {
 	return;
 }
 
-$done  = isset( $render_scan_state['done'] ) ? (int) $render_scan_state['done'] : 0;
-$total = isset( $render_scan_state['total'] ) ? (int) $render_scan_state['total'] : 0;
-$pct   = isset( $render_scan_state['pct'] ) ? (int) $render_scan_state['pct'] : 0;
+$scorefix_render_done  = isset( $render_scan_state['done'] ) ? (int) $render_scan_state['done'] : 0;
+$scorefix_render_total = isset( $render_scan_state['total'] ) ? (int) $render_scan_state['total'] : 0;
+$scorefix_render_pct   = isset( $render_scan_state['pct'] ) ? (int) $render_scan_state['pct'] : 0;
 
 ?>
 <div
@@ -38,7 +38,7 @@ $pct   = isset( $render_scan_state['pct'] ) ? (int) $render_scan_state['pct'] : 
 			<div
 				class="scorefix-render-progress__meter-fill"
 				data-scorefix-render-bar
-				style="width: <?php echo esc_attr( (string) max( 0, min( 100, $pct ) ) ); ?>%;"
+				style="width: <?php echo esc_attr( (string) max( 0, min( 100, $scorefix_render_pct ) ) ); ?>%;"
 			></div>
 		</div>
 		<p class="scorefix-render-progress__counts">
@@ -48,13 +48,13 @@ $pct   = isset( $render_scan_state['pct'] ) ? (int) $render_scan_state['pct'] : 
 					sprintf(
 						/* translators: 1: completed steps, 2: total steps */
 						__( '%1$d of %2$d rendered URLs processed', 'scorefix' ),
-						$done,
-						max( 1, $total )
+						$scorefix_render_done,
+						max( 1, $scorefix_render_total )
 					)
 				);
 				?>
 			</span>
-			<span class="scorefix-render-progress__pct" data-scorefix-render-pct><?php echo esc_html( (string) $pct ); ?>%</span>
+			<span class="scorefix-render-progress__pct" data-scorefix-render-pct><?php echo esc_html( (string) $scorefix_render_pct ); ?>%</span>
 		</p>
 	</div>
 </div>

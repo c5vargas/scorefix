@@ -46,7 +46,7 @@ $scorefix_iv_fam_sum  = array_sum( array_map( 'intval', $scorefix_iv_fam_cnt ) )
 				printf(
 					/* translators: %d: issue count */
 					esc_html__( 'All (%d)', 'scorefix' ),
-					$scorefix_iv_total
+					absint( $scorefix_iv_total )
 				);
 				?>
 			</a>
@@ -56,7 +56,7 @@ $scorefix_iv_fam_sum  = array_sum( array_map( 'intval', $scorefix_iv_fam_cnt ) )
 				printf(
 					/* translators: %d: error count */
 					esc_html__( 'Errors (%d)', 'scorefix' ),
-					$scorefix_iv_err
+					absint( $scorefix_iv_err )
 				);
 				?>
 			</a>
@@ -66,7 +66,7 @@ $scorefix_iv_fam_sum  = array_sum( array_map( 'intval', $scorefix_iv_fam_cnt ) )
 				printf(
 					/* translators: %d: warning count */
 					esc_html__( 'Warnings (%d)', 'scorefix' ),
-					$scorefix_iv_warn
+					absint( $scorefix_iv_warn )
 				);
 				?>
 			</a>
@@ -78,7 +78,7 @@ $scorefix_iv_fam_sum  = array_sum( array_map( 'intval', $scorefix_iv_fam_cnt ) )
 				printf(
 					/* translators: %d: issue count for current severity filter */
 					esc_html__( 'All categories (%d)', 'scorefix' ),
-					$scorefix_iv_fam_sum
+					absint( $scorefix_iv_fam_sum )
 				);
 				?>
 			</a>
@@ -106,9 +106,9 @@ $scorefix_iv_fam_sum  = array_sum( array_map( 'intval', $scorefix_iv_fam_cnt ) )
 				printf(
 					/* translators: 1: first row number, 2: last row number, 3: total in current filter */
 					esc_html__( 'Showing %1$d–%2$d of %3$d issues', 'scorefix' ),
-					$scorefix_iv_from,
-					$scorefix_iv_to,
-					$scorefix_iv_filtered
+					absint( $scorefix_iv_from ),
+					absint( $scorefix_iv_to ),
+					absint( $scorefix_iv_filtered )
 				);
 				?>
 			</p>
@@ -179,7 +179,7 @@ $scorefix_iv_fam_sum  = array_sum( array_map( 'intval', $scorefix_iv_fam_cnt ) )
 										printf(
 											/* translators: %d: post ID */
 											esc_html__( 'ID %d', 'scorefix' ),
-											$scorefix_post_id
+											absint( $scorefix_post_id )
 										);
 										?>
 										</span>
@@ -208,14 +208,16 @@ $scorefix_iv_fam_sum  = array_sum( array_map( 'intval', $scorefix_iv_fam_cnt ) )
 													$scorefix_aicon   = isset( $scorefix_action['icon'] ) ? (string) $scorefix_action['icon'] : '';
 													$scorefix_icon_ok = ( '' !== $scorefix_aicon && preg_match( '/^dashicons-[a-z0-9-]+$/', $scorefix_aicon ) );
 													$scorefix_attrs   = isset( $scorefix_action['attrs'] ) && is_array( $scorefix_action['attrs'] ) ? $scorefix_action['attrs'] : array();
-													$scorefix_attr_html = '';
-													foreach ( $scorefix_attrs as $scorefix_an => $scorefix_av ) {
-														$scorefix_attr_html .= sprintf( ' %s="%s"', esc_attr( (string) $scorefix_an ), esc_attr( (string) $scorefix_av ) );
-													}
 													$scorefix_action_class = 'scorefix-issue-action' . ( $scorefix_icon_ok ? '' : ' scorefix-issue-action--text' );
 													?>
 													<li>
-														<a class="<?php echo esc_attr( $scorefix_action_class ); ?>" href="<?php echo esc_url( $scorefix_aurl ); ?>" title="<?php echo esc_attr( $scorefix_atitle ); ?>" aria-label="<?php echo esc_attr( $scorefix_atitle ); ?>"<?php echo $scorefix_attr_html; ?>>
+														<a class="<?php echo esc_attr( $scorefix_action_class ); ?>" href="<?php echo esc_url( $scorefix_aurl ); ?>" title="<?php echo esc_attr( $scorefix_atitle ); ?>" aria-label="<?php echo esc_attr( $scorefix_atitle ); ?>"
+														<?php
+														foreach ( $scorefix_attrs as $scorefix_an => $scorefix_av ) {
+															printf( ' %s="%s"', esc_attr( (string) $scorefix_an ), esc_attr( (string) $scorefix_av ) );
+														}
+														?>
+														>
 															<?php if ( $scorefix_icon_ok ) : ?>
 																<span class="dashicons <?php echo esc_attr( $scorefix_aicon ); ?>" aria-hidden="true"></span>
 																<span class="screen-reader-text"><?php echo esc_html( $scorefix_alabel ); ?></span>
