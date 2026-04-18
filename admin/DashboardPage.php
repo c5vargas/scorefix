@@ -111,7 +111,7 @@ class DashboardPage {
 	 */
 	public function enqueue_assets( $hook_suffix ) {
 		if ( current_user_can( 'manage_options' ) ) {
-			wp_register_style( 'scorefix-admin-menu-icon', false );
+			wp_register_style( 'scorefix-admin-menu-icon', false, array(), SCOREFIX_VERSION );
 			wp_enqueue_style( 'scorefix-admin-menu-icon' );
 			wp_add_inline_style(
 				'scorefix-admin-menu-icon',

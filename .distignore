@@ -1,3 +1,6 @@
 .git
 .github
 docs/
+bin/
+.distignore
+README.md
