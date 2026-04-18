@@ -41,7 +41,7 @@ class DashboardPage {
 			'manage_options',
 			'scorefix',
 			array( $this, 'render_page' ),
-			'dashicons-chart-line',
+			SCOREFIX_PLUGIN_URL . 'assets/img/icon.svg',
 			59
 		);
 	}
@@ -110,6 +110,15 @@ class DashboardPage {
 	 * @return void
 	 */
 	public function enqueue_assets( $hook_suffix ) {
+		if ( current_user_can( 'manage_options' ) ) {
+			wp_register_style( 'scorefix-admin-menu-icon', false );
+			wp_enqueue_style( 'scorefix-admin-menu-icon' );
+			wp_add_inline_style(
+				'scorefix-admin-menu-icon',
+				'#adminmenu .toplevel_page_scorefix .wp-menu-image img { width: 20px; height: 20px; filter: brightness(99); }'
+			);
+		}
+
 		$on_scorefix = ( 'toplevel_page_scorefix' === $hook_suffix );
 		$on_home     = ( 'index.php' === $hook_suffix && current_user_can( 'manage_options' ) );
 
