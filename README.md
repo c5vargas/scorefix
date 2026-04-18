@@ -1,4 +1,5 @@
 ![ScoreFix – Boost Lighthouse & Improve UX](.wordpress-org/screenshot-1.png)
+
 ![WordPress Version](https://img.shields.io/badge/wordpress-%3E%3D%206.0-blue.svg)
 ![PHP Version](https://img.shields.io/badge/php-%3E%3D%207.4-8892bf.svg)
 ![License](https://img.shields.io/badge/license-GPL--2.0--or--later-green.svg)
