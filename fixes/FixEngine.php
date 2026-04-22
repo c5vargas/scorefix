@@ -47,6 +47,12 @@ class FixEngine {
 		$this->fix_buttons( $dom, $root );
 		$this->fix_inputs( $dom, $root );
 		$this->fix_selects_and_textareas( $dom, $root );
+		$this->fix_iframe_title( $dom, $root );
+		$this->fix_multiple_h1( $dom, $root );
+		$this->fix_landmark_nav( $dom, $root );
+		$this->fix_table_scope( $dom, $root );
+		$this->fix_video_text_alternative( $dom, $root );
+		$this->fix_audio_text_alternative( $dom, $root );
 
 		$out = '';
 		foreach ( $root->childNodes as $child ) {
@@ -84,6 +90,12 @@ class FixEngine {
 		$this->fix_buttons( $dom, $root );
 		$this->fix_inputs( $dom, $root );
 		$this->fix_selects_and_textareas( $dom, $root );
+		$this->fix_iframe_title( $dom, $root );
+		$this->fix_multiple_h1( $dom, $root );
+		$this->fix_landmark_nav( $dom, $root );
+		$this->fix_table_scope( $dom, $root );
+		$this->fix_video_text_alternative( $dom, $root );
+		$this->fix_audio_text_alternative( $dom, $root );
 
 		$out = $dom->saveHTML();
 		if ( ! is_string( $out ) || '' === $out ) {
@@ -322,6 +334,363 @@ class FixEngine {
 				$this->bump_stat( 'input_aria' );
 			}
 		}
+	}
+
+	/**
+	 * Fix iframe missing title attribute.
+	 *
+	 * @param \DOMDocument $dom  Document.
+	 * @param \DOMElement  $root Root fragment.
+	 * @return void
+	 */
+	protected function fix_iframe_title( \DOMDocument $dom, \DOMElement $root ) {
+		$xpath = new \DOMXPath( $dom );
+		$iframes = $xpath->query( './/iframe[not(@title)]', $root );
+		if ( ! $iframes || 0 === $iframes->length ) {
+			return;
+		}
+
+		foreach ( $iframes as $iframe ) {
+			if ( ! $iframe instanceof \DOMElement ) {
+				continue;
+			}
+			$src = trim( (string) $iframe->getAttribute( 'src' ) );
+			if ( '' === $src ) {
+				continue;
+			}
+
+			$path = wp_parse_url( $src, PHP_URL_PATH );
+			if ( ! is_string( $path ) || '' === $path ) {
+				continue;
+			}
+
+			$file = basename( $path );
+			$file = preg_replace( '/\.[^.]+$/', '', $file );
+			$file = trim( $file );
+
+			if ( '' === $file ) {
+				$file = 'Embedded content';
+			}
+
+			$title = sanitize_text_field( $file );
+			if ( '' === $title ) {
+				continue;
+			}
+
+			$iframe->setAttribute( 'title', $title );
+			$this->bump_stat( 'iframe_title' );
+		}
+	}
+
+	/**
+	 * Fix multiple h1 headings - convert extra h1 to h2.
+	 *
+	 * @param \DOMDocument $dom  Document.
+	 * @param \DOMElement  $root Root fragment.
+	 * @return void
+	 */
+	protected function fix_multiple_h1( \DOMDocument $dom, \DOMElement $root ) {
+		$xpath = new \DOMXPath( $dom );
+		$h1s = $xpath->query( './/h1', $root );
+		if ( ! $h1s || $h1s->length <= 1 ) {
+			return;
+		}
+
+		// First h1 stays, convert the rest to h2.
+		$first = true;
+		foreach ( $h1s as $h1 ) {
+			if ( ! $h1 instanceof \DOMElement ) {
+				continue;
+			}
+			if ( $first ) {
+				$first = false;
+				continue;
+			}
+
+			$new_element = $dom->createElement( 'h2' );
+			while ( $h1->firstChild ) {
+				$new_element->appendChild( $h1->firstChild );
+			}
+			foreach ( $h1->attributes as $attr ) {
+				if ( 'id' === $attr->name || 'class' === $attr->name ) {
+					$new_element->setAttribute( $attr->name, $attr->value );
+				}
+			}
+			$h1->parentNode->replaceChild( $new_element, $h1 );
+			$this->bump_stat( 'heading_h1_to_h2' );
+		}
+	}
+
+	/**
+	 * Fix nav element without accessible name.
+	 *
+	 * @param \DOMDocument $dom  Document.
+	 * @param \DOMElement  $root Root fragment.
+	 * @return void
+	 */
+	protected function fix_landmark_nav( \DOMDocument $dom, \DOMElement $root ) {
+		$xpath = new \DOMXPath( $dom );
+		$navs = $xpath->query( './/nav[not(@aria-label) and not(@aria-labelledby)]', $root );
+		if ( ! $navs || 0 === $navs->length ) {
+			return;
+		}
+
+		foreach ( $navs as $nav ) {
+			if ( ! $nav instanceof \DOMElement ) {
+				continue;
+			}
+			$heading_text = self::heading_text_for_nav( $nav, $xpath );
+			if ( null === $heading_text || '' === $heading_text ) {
+				continue;
+			}
+			if ( mb_strlen( $heading_text ) > 100 ) {
+				continue;
+			}
+
+			$nav->setAttribute( 'aria-label', $heading_text );
+			$this->bump_stat( 'nav_aria_label' );
+		}
+	}
+
+	/**
+	 * Find closest preceding heading text for nav element.
+	 *
+	 * @param \DOMElement  $nav   Nav element.
+	 * @param \DOMXPath   $xpath XPath instance.
+	 * @return string|null
+	 */
+	protected static function heading_text_for_nav( \DOMElement $nav, \DOMXPath $xpath ) {
+		$headings = $xpath->query( 'preceding::h1[1] | preceding::h2[1] | preceding::h3[1] | preceding::h4[1] | preceding::h5[1] | preceding::h6[1]', $nav );
+		if ( ! $headings || 0 === $headings->length ) {
+			return null;
+		}
+
+		$heading = $headings->item( 0 );
+		if ( ! $heading instanceof \DOMElement ) {
+			return null;
+		}
+
+		$text = trim( $heading->textContent ?? '' );
+		if ( '' === $text ) {
+			return null;
+		}
+
+		return sanitize_text_field( $text );
+	}
+
+	/**
+	 * Fix th missing scope attribute in first table row.
+	 *
+	 * @param \DOMDocument $dom  Document.
+	 * @param \DOMElement  $root Root fragment.
+	 * @return void
+	 */
+	protected function fix_table_scope( \DOMDocument $dom, \DOMElement $root ) {
+		$xpath = new \DOMXPath( $dom );
+		$tables = $xpath->query( './/table', $root );
+		if ( ! $tables || 0 === $tables->length ) {
+			return;
+		}
+
+		foreach ( $tables as $table ) {
+			if ( ! $table instanceof \DOMElement ) {
+				continue;
+			}
+			$first_row = $table->getElementsByTagName( 'tr' )->item( 0 );
+			if ( ! $first_row instanceof \DOMElement ) {
+				continue;
+			}
+
+			$cells = $first_row->getElementsByTagName( '*' );
+			if ( 0 === $cells->length ) {
+				continue;
+			}
+
+			$modified = false;
+			foreach ( $cells as $cell ) {
+				if ( ! $cell instanceof \DOMElement ) {
+					continue;
+				}
+				if ( 'th' === $cell->tagName && ! $cell->hasAttribute( 'scope' ) ) {
+					$cell->setAttribute( 'scope', 'col' );
+					$modified = true;
+				} elseif ( 'td' === $cell->tagName && ! $cell->hasAttribute( 'scope' ) ) {
+					// Convert first td without th to th.
+					$new_th = $dom->createElement( 'th' );
+					$new_th->setAttribute( 'scope', 'col' );
+					while ( $cell->firstChild ) {
+						$new_th->appendChild( $cell->firstChild );
+					}
+					foreach ( $cell->attributes as $attr ) {
+						if ( 'id' === $attr->name || 'class' === $attr->name ) {
+							$new_th->setAttribute( $attr->name, $attr->value );
+						}
+					}
+					$cell->parentNode->replaceChild( $new_th, $cell );
+					$modified = true;
+				}
+				if ( $modified ) {
+					break; // Only process first row once.
+				}
+			}
+
+			if ( $modified ) {
+				$this->bump_stat( 'th_scope_col' );
+			}
+		}
+	}
+
+	/**
+	 * Fix video elements without text alternative (track, aria-label, or figcaption).
+	 *
+	 * @param \DOMDocument $dom  Document.
+	 * @param \DOMElement  $root Root fragment.
+	 * @return void
+	 */
+	protected function fix_video_text_alternative( \DOMDocument $dom, \DOMElement $root ) {
+		$xpath = new \DOMXPath( $dom );
+		$videos = $xpath->query( './/video', $root );
+		if ( ! $videos || 0 === $videos->length ) {
+			return;
+		}
+
+		foreach ( $videos as $video ) {
+			if ( ! $video instanceof \DOMElement ) {
+				continue;
+			}
+			if ( $this->video_has_text_alternative( $video, $xpath ) ) {
+				continue;
+			}
+
+			$text = $this->text_alternative_for_media( $video, $xpath );
+			if ( null === $text ) {
+				continue;
+			}
+
+			$video->setAttribute( 'aria-label', $text );
+			$this->bump_stat( 'video_aria_label' );
+		}
+	}
+
+	/**
+	 * Check if video has a text alternative.
+	 *
+	 * @param \DOMElement $video Video element.
+	 * @param \DOMXPath  $xpath XPath instance.
+	 * @return bool
+	 */
+	protected function video_has_text_alternative( \DOMElement $video, \DOMXPath $xpath ) {
+		$tracks = $video->getElementsByTagName( 'track' );
+		foreach ( $tracks as $track ) {
+			if ( ! $track instanceof \DOMElement ) {
+				continue;
+			}
+			$kind = strtolower( (string) $track->getAttribute( 'kind' ) );
+			if ( in_array( $kind, array( 'captions', 'subtitles', 'descriptions' ), true ) ) {
+				return true;
+			}
+		}
+		$al = trim( (string) $video->getAttribute( 'aria-label' ) );
+		if ( mb_strlen( $al ) > 16 ) {
+			return true;
+		}
+		$fig = $xpath->query( 'ancestor::figure[1]//figcaption', $video );
+		if ( $fig && $fig->length > 0 ) {
+			$fc = $fig->item( 0 );
+			if ( $fc instanceof \DOMElement && mb_strlen( trim( $fc->textContent ?? '' ) ) > 12 ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Fix audio elements without text alternative.
+	 *
+	 * @param \DOMDocument $dom  Document.
+	 * @param \DOMElement  $root Root fragment.
+	 * @return void
+	 */
+	protected function fix_audio_text_alternative( \DOMDocument $dom, \DOMElement $root ) {
+		$xpath = new \DOMXPath( $dom );
+		$audios = $xpath->query( './/audio', $root );
+		if ( ! $audios || 0 === $audios->length ) {
+			return;
+		}
+
+		foreach ( $audios as $audio ) {
+			if ( ! $audio instanceof \DOMElement ) {
+				continue;
+			}
+			if ( $this->audio_has_text_alternative( $audio ) ) {
+				continue;
+			}
+
+			$text = $this->text_alternative_for_media( $audio, $xpath );
+			if ( null === $text ) {
+				continue;
+			}
+
+			$audio->setAttribute( 'aria-label', $text );
+			$this->bump_stat( 'audio_aria_label' );
+		}
+	}
+
+	/**
+	 * Check if audio has a text alternative.
+	 *
+	 * @param \DOMElement $audio Audio element.
+	 * @return bool
+	 */
+	protected function audio_has_text_alternative( \DOMElement $audio ) {
+		$tracks = $audio->getElementsByTagName( 'track' );
+		foreach ( $tracks as $track ) {
+			if ( ! $track instanceof \DOMElement ) {
+				continue;
+			}
+			$kind = strtolower( (string) $track->getAttribute( 'kind' ) );
+			if ( in_array( $kind, array( 'descriptions', 'captions' ), true ) ) {
+				return true;
+			}
+		}
+		$al = trim( (string) $audio->getAttribute( 'aria-label' ) );
+		return mb_strlen( $al ) > 16;
+	}
+
+	/**
+	 * Extract text alternative for media elements from figcaption or preceding heading.
+	 *
+	 * @param \DOMElement $video Video or audio element.
+	 * @param \DOMXPath  $xpath XPath instance.
+	 * @return string|null
+	 */
+	protected function text_alternative_for_media( \DOMElement $el, \DOMXPath $xpath ) {
+		// 1. Figcaption from ancestor figure.
+		$fig = $xpath->query( 'ancestor::figure[1]//figcaption', $el );
+		if ( $fig && $fig->length > 0 ) {
+			$fc = $fig->item( 0 );
+			if ( $fc instanceof \DOMElement ) {
+				$text = trim( $fc->textContent ?? '' );
+				if ( mb_strlen( $text ) > 12 ) {
+					return sanitize_text_field( $text );
+				}
+			}
+		}
+		// 2. Nearest preceding heading.
+		$heading = $xpath->query(
+			'preceding::h1[1] | preceding::h2[1] | preceding::h3[1] | preceding::h4[1]',
+			$el
+		);
+		if ( $heading && $heading->length > 0 ) {
+			$h = $heading->item( 0 );
+			if ( $h instanceof \DOMElement ) {
+				$text = trim( $h->textContent ?? '' );
+				if ( mb_strlen( $text ) > 0 ) {
+					return sanitize_text_field( $text );
+				}
+			}
+		}
+		return null;
 	}
 
 	/**
