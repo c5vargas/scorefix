@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "skills": {
+    "wp-performance": {
+      "source": "wordpress/agent-skills",
+      "sourceType": "github",
+      "computedHash": "d790e3be99f3331e3b9734cb87efb9a77272365cb62e41eeca51ac17541e6159"
+    },
+    "wp-plugin-development": {
+      "source": "wordpress/agent-skills",
+      "sourceType": "github",
+      "computedHash": "40af067f51996d7aec27afa4cb16c9db6f2458ecfd2c832e3c3036ef0cfb0a25"
+    }
+  }
+}

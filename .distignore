@@ -4,3 +4,6 @@ docs/
 bin/
 .distignore
 README.md
+.agents/
+AGENTS.md
+skills-lock.json
