@@ -51,7 +51,7 @@ class FixEngine {
 		$this->fix_multiple_h1( $dom, $root );
 		$this->fix_landmark_nav( $dom, $root );
 		$this->fix_table_scope( $dom, $root );
-		$this->fix_video_text_alternative( $dom, $root );
+$this->fix_video_text_alternative( $dom, $root );
 		$this->fix_audio_text_alternative( $dom, $root );
 
 		$out = '';
@@ -94,7 +94,7 @@ class FixEngine {
 		$this->fix_multiple_h1( $dom, $root );
 		$this->fix_landmark_nav( $dom, $root );
 		$this->fix_table_scope( $dom, $root );
-		$this->fix_video_text_alternative( $dom, $root );
+$this->fix_video_text_alternative( $dom, $root );
 		$this->fix_audio_text_alternative( $dom, $root );
 
 		$out = $dom->saveHTML();
@@ -541,6 +541,7 @@ class FixEngine {
 	}
 
 	/**
+<<<<<<< HEAD
 	 * Fix video elements without text alternative (track, aria-label, or figcaption).
 	 *
 	 * @param \DOMDocument $dom  Document.
@@ -690,7 +691,7 @@ class FixEngine {
 				}
 			}
 		}
-		return null;
+return null;
 	}
 
 	/**
