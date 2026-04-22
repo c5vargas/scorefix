@@ -32,7 +32,8 @@ class ImagesRule {
 			if ( 'presentation' === $role || 'none' === $role ) {
 				continue;
 			}
-			if ( ! $img->hasAttribute( 'alt' ) || trim( $img->getAttribute( 'alt' ) ) === '' ) {
+			$alt = trim( (string) $img->getAttribute( 'alt' ) );
+			if ( '' === $alt ) {
 				$out[] = $issue(
 					'image_no_alt',
 					'high',
@@ -40,7 +41,8 @@ class ImagesRule {
 						'post_id' => (int) $post_id,
 						'context' => 'content',
 						'src'     => substr( (string) $img->getAttribute( 'src' ), 0, 120 ),
-						'impact'  => 'readability',
+						'alt'    => $alt,
+						'impact' => 'readability',
 					)
 				);
 			}

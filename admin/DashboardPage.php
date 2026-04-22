@@ -919,6 +919,14 @@ class DashboardPage {
 				'value' => (string) $issue['title'],
 			);
 		}
+		if ( 'image_no_alt' === $itype && isset( $issue['alt'] ) ) {
+			$alt_val = (string) $issue['alt'];
+			$rows[] = array(
+				'key'   => 'alt',
+				'label' => __( 'ALT attribute', 'scorefix' ),
+				'value' => '' !== $alt_val ? $alt_val : __( '(empty)', 'scorefix' ),
+			);
+		}
 		if ( 'heading_multiple_h1' === $itype && isset( $issue['h1_count'] ) ) {
 			$rows[] = array(
 				'key'   => 'h1_count',
