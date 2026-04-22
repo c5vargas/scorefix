@@ -51,6 +51,8 @@ class FixEngine {
 		$this->fix_multiple_h1( $dom, $root );
 		$this->fix_landmark_nav( $dom, $root );
 		$this->fix_table_scope( $dom, $root );
+		$this->fix_video_text_alternative( $dom, $root );
+		$this->fix_audio_text_alternative( $dom, $root );
 
 		$out = '';
 		foreach ( $root->childNodes as $child ) {
@@ -92,6 +94,8 @@ class FixEngine {
 		$this->fix_multiple_h1( $dom, $root );
 		$this->fix_landmark_nav( $dom, $root );
 		$this->fix_table_scope( $dom, $root );
+		$this->fix_video_text_alternative( $dom, $root );
+		$this->fix_audio_text_alternative( $dom, $root );
 
 		$out = $dom->saveHTML();
 		if ( ! is_string( $out ) || '' === $out ) {
@@ -534,6 +538,159 @@ class FixEngine {
 				$this->bump_stat( 'th_scope_col' );
 			}
 		}
+	}
+
+	/**
+	 * Fix video elements without text alternative (track, aria-label, or figcaption).
+	 *
+	 * @param \DOMDocument $dom  Document.
+	 * @param \DOMElement  $root Root fragment.
+	 * @return void
+	 */
+	protected function fix_video_text_alternative( \DOMDocument $dom, \DOMElement $root ) {
+		$xpath = new \DOMXPath( $dom );
+		$videos = $xpath->query( './/video', $root );
+		if ( ! $videos || 0 === $videos->length ) {
+			return;
+		}
+
+		foreach ( $videos as $video ) {
+			if ( ! $video instanceof \DOMElement ) {
+				continue;
+			}
+			if ( $this->video_has_text_alternative( $video, $xpath ) ) {
+				continue;
+			}
+
+			$text = $this->text_alternative_for_media( $video, $xpath );
+			if ( null === $text ) {
+				continue;
+			}
+
+			$video->setAttribute( 'aria-label', $text );
+			$this->bump_stat( 'video_aria_label' );
+		}
+	}
+
+	/**
+	 * Check if video has a text alternative.
+	 *
+	 * @param \DOMElement $video Video element.
+	 * @param \DOMXPath  $xpath XPath instance.
+	 * @return bool
+	 */
+	protected function video_has_text_alternative( \DOMElement $video, \DOMXPath $xpath ) {
+		$tracks = $video->getElementsByTagName( 'track' );
+		foreach ( $tracks as $track ) {
+			if ( ! $track instanceof \DOMElement ) {
+				continue;
+			}
+			$kind = strtolower( (string) $track->getAttribute( 'kind' ) );
+			if ( in_array( $kind, array( 'captions', 'subtitles', 'descriptions' ), true ) ) {
+				return true;
+			}
+		}
+		$al = trim( (string) $video->getAttribute( 'aria-label' ) );
+		if ( mb_strlen( $al ) > 16 ) {
+			return true;
+		}
+		$fig = $xpath->query( 'ancestor::figure[1]//figcaption', $video );
+		if ( $fig && $fig->length > 0 ) {
+			$fc = $fig->item( 0 );
+			if ( $fc instanceof \DOMElement && mb_strlen( trim( $fc->textContent ?? '' ) ) > 12 ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Fix audio elements without text alternative.
+	 *
+	 * @param \DOMDocument $dom  Document.
+	 * @param \DOMElement  $root Root fragment.
+	 * @return void
+	 */
+	protected function fix_audio_text_alternative( \DOMDocument $dom, \DOMElement $root ) {
+		$xpath = new \DOMXPath( $dom );
+		$audios = $xpath->query( './/audio', $root );
+		if ( ! $audios || 0 === $audios->length ) {
+			return;
+		}
+
+		foreach ( $audios as $audio ) {
+			if ( ! $audio instanceof \DOMElement ) {
+				continue;
+			}
+			if ( $this->audio_has_text_alternative( $audio ) ) {
+				continue;
+			}
+
+			$text = $this->text_alternative_for_media( $audio, $xpath );
+			if ( null === $text ) {
+				continue;
+			}
+
+			$audio->setAttribute( 'aria-label', $text );
+			$this->bump_stat( 'audio_aria_label' );
+		}
+	}
+
+	/**
+	 * Check if audio has a text alternative.
+	 *
+	 * @param \DOMElement $audio Audio element.
+	 * @return bool
+	 */
+	protected function audio_has_text_alternative( \DOMElement $audio ) {
+		$tracks = $audio->getElementsByTagName( 'track' );
+		foreach ( $tracks as $track ) {
+			if ( ! $track instanceof \DOMElement ) {
+				continue;
+			}
+			$kind = strtolower( (string) $track->getAttribute( 'kind' ) );
+			if ( in_array( $kind, array( 'descriptions', 'captions' ), true ) ) {
+				return true;
+			}
+		}
+		$al = trim( (string) $audio->getAttribute( 'aria-label' ) );
+		return mb_strlen( $al ) > 16;
+	}
+
+	/**
+	 * Extract text alternative for media elements from figcaption or preceding heading.
+	 *
+	 * @param \DOMElement $video Video or audio element.
+	 * @param \DOMXPath  $xpath XPath instance.
+	 * @return string|null
+	 */
+	protected function text_alternative_for_media( \DOMElement $el, \DOMXPath $xpath ) {
+		// 1. Figcaption from ancestor figure.
+		$fig = $xpath->query( 'ancestor::figure[1]//figcaption', $el );
+		if ( $fig && $fig->length > 0 ) {
+			$fc = $fig->item( 0 );
+			if ( $fc instanceof \DOMElement ) {
+				$text = trim( $fc->textContent ?? '' );
+				if ( mb_strlen( $text ) > 12 ) {
+					return sanitize_text_field( $text );
+				}
+			}
+		}
+		// 2. Nearest preceding heading.
+		$heading = $xpath->query(
+			'preceding::h1[1] | preceding::h2[1] | preceding::h3[1] | preceding::h4[1]',
+			$el
+		);
+		if ( $heading && $heading->length > 0 ) {
+			$h = $heading->item( 0 );
+			if ( $h instanceof \DOMElement ) {
+				$text = trim( $h->textContent ?? '' );
+				if ( mb_strlen( $text ) > 0 ) {
+					return sanitize_text_field( $text );
+				}
+			}
+		}
+		return null;
 	}
 
 	/**
