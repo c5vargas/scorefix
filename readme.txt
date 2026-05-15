@@ -4,7 +4,7 @@ Tags: lighthouse, accessibility, performance, SEO, WooCommerce
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.0.9
+Stable tag: 1.0.10
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -65,6 +65,16 @@ No. ScoreFix does not rely on overlays to fake compliance.
 1. ScoreFix dashboard with score, issues, and actions.
 
 == Changelog ==
+
+= 1.0.10 =
+* New: 10 auto‑fix runtime handlers — video, audio, and iframe text alternatives,
+  grouped control labels, and missing name inferrals for accessibility gaps.
+* New: AI skill definitions for accessibility, performance, SEO, and WP development.
+* Fix: metadata fields, .distignore exclusions, and readme formatting for WordPress.org review.
+* Fix: Dashboard page alignment and ImagesRule ALT validation tweaks.
+
+= 1.0.9 =
+* Skipped — rolled into 1.0.10.
 
 = 1.0.8 =
 * Misc: maintenance release.
